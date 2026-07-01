@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fraudwatch-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fraudwatch
+      POSTGRES_PASSWORD: fraudwatch_password
+      POSTGRES_DB: fraudwatch_db
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraudwatch"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fraudwatch-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: fraudwatch-redis
+    restart: unless-stopped
+    command: redis-server --requirepass redis_secure_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fraudwatch-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      target: production
+    container_name: fraudwatch-backend
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://fraudwatch:fraudwatch_password@postgres:5432/fraudwatch_db
+      - DATABASE_SYNC_URL=postgresql://fraudwatch:fraudwatch_password@postgres:5432/fraudwatch_db
+      - REDIS_URL=redis://:redis_secure_password@redis:6379/0
+      - CELERY_BROKER_URL=redis://:redis_secure_password@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:redis_secure_password@redis:6379/2
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    networks:
+      - fraudwatch-network
+    volumes:
+      - ./ml/artifacts:/app/ml/artifacts
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      target: production
+    container_name: fraudwatch-celery
+    restart: unless-stopped
+    command: celery -A app.workers.celery worker --loglevel=info
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://fraudwatch:fraudwatch_password@postgres:5432/fraudwatch_db
+      - REDIS_URL=redis://:redis_secure_password@redis:6379/0
+      - CELERY_BROKER_URL=redis://:redis_secure_password@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:redis_secure_password@redis:6379/2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - fraudwatch-network
+    volumes:
+      - ./ml/artifacts:/app/ml/artifacts
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+      target: production
+    container_name: fraudwatch-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_V1_PREFIX=/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    networks:
+      - fraudwatch-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  fraudwatch-network:
+    driver: bridge

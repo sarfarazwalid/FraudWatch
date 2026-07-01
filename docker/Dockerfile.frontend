@@ -1,0 +1,96 @@
+# Frontend Dockerfile
+# Multi-stage build for optimized production image
+
+# Stage 1: Build
+FROM node:20-bookworm-slim AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY frontend/package.json frontend/package-lock.json ./
+
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+
+
+# Stage 2: Production
+FROM node:20-bookworm-slim AS production
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY --chown=appuser:appuser frontend/package.json frontend/package-lock.json ./
+
+# Install dependencies
+COPY --chown=appuser:appuser --from=builder /app/node_modules ./node_modules
+
+# Copy application code
+COPY --chown=appuser:appuser frontend/ ./frontend/
+
+# Set environment variables
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Run the application
+CMD ["npm", "start", "--prefix", "./frontend"]
+
+
+# Stage 3: Development
+FROM node:20-bookworm-slim AS development
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+WORKDIR /app
+
+# Copy package files
+COPY --chown=appuser:appuser frontend/package.json frontend/package-lock.json ./
+
+# Install all dependencies including devDependencies
+RUN npm install && npm cache clean --force
+
+# Copy application code
+COPY --chown=appuser:appuser frontend/ ./frontend/
+
+# Set environment variables
+ENV NODE_ENV=development
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 3000
+
+# Default command for development
+CMD ["npm", "run", "dev", "--prefix", "./frontend"]
+</parameter>
+<task_progress>
+- [x] Create root project structure
+- [x] Initialize frontend (Next.js + TypeScript + Tailwind)
+- [x] Initialize backend (FastAPI + SQLAlchemy)
+- [x] Set up ML folder structure
+- [ ] Create Docker configuration
+- [ ] Configure environment variables
+- [ ] Set up code quality tools
+- [ ] Create documentation and Git files
+- [ ] Set up CI/CD pipelines
+- [ ] Prepare security architecture
+- [ ] Verify complete project structure
+</task_progress>
+</write_to_file>
