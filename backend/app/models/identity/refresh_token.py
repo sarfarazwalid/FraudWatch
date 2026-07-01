@@ -1,0 +1,85 @@
+"""
+RefreshToken model for JWT refresh token management.
+
+Stores hashed refresh tokens for secure session renewal.
+Tokens are rotated on each use for enhanced security.
+"""
+
+from datetime import datetime, timezone
+from typing import Optional
+
+from sqlalchemy import String, ForeignKey, Boolean, Integer
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin
+from app.models.identity.user import User
+
+
+class RefreshToken(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
+    """
+    Refresh token model for JWT token renewal.
+    """
+    __tablename__ = "refresh_tokens"
+    
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", name="fk_refresh_tokens_user_id"),
+        nullable=False,
+        index=True,
+    )
+    
+    token_hash: Mapped[str] = mapped_column(
+        String(255),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    
+    expires_at: Mapped[datetime] = mapped_column(
+        nullable=False,
+        index=True,
+    )
+    
+    revoked: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+    )
+    
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(
+        nullable=True,
+    )
+    
+    rotation_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+    
+    device_info: Mapped[Optional[str]] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+    
+    ip_address: Mapped[Optional[str]] = mapped_column(
+        String(45),
+        nullable=True,
+    )
+    
+    user: Mapped[User] = relationship(
+        "User",
+        back_populates="refresh_tokens",
+    )
+    
+    def __repr__(self) -> str:
+        return f"<RefreshToken hash={self.token_hash[:8]}... user={self.user_id}>"
+    
+    @property
+    def is_expired(self) -> bool:
+        """Check if token has expired."""
+        return datetime.now(timezone.utc) > self.expires_at
+    
+    @property
+    def is_valid(self) -> bool:
+        """Check if token is valid (not expired, not revoked)."""
+        return not self.revoked and not self.is_expired

@@ -1,0 +1,56 @@
+"""
+Permission model for RBAC.
+
+Represents a granular permission that can be assigned to roles.
+Permissions define what actions can be performed on resources.
+"""
+
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import Base
+from app.models.mixins import UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin
+from app.models.identity.role_permission import RolePermission
+
+
+class Permission(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
+    """
+    Permission model for fine-grained access control.
+    
+    Permissions represent the ability to perform an action on a resource.
+    They are assigned to roles, not directly to users.
+    """
+    __tablename__ = "permissions"
+    
+    resource: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+    
+    action: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+    
+    description: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+    
+    # Relationships
+    roles: Mapped[list["Role"]] = relationship(
+        "Role",
+        secondary="role_permissions",
+        back_populates="permissions",
+        lazy="selectin",
+    )
+    
+    role_permissions: Mapped[list[RolePermission]] = relationship(
+        RolePermission,
+        back_populates="permission",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+    
+    def __repr__(self) -> str:
+        return f"<Permission {self.resource}:{self.action}>"
