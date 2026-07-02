@@ -2,15 +2,28 @@
 UserSession model for tracking active user sessions.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID as PyUUID
 
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
 
-from app.models.base import Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin
+from app.models.base import Base
+from app.models.mixins import (
+    UUIDMixin,
+    TimestampMixin,
+    SoftDeleteMixin,
+    AuditMixin,
+    VersionMixin,
+)
 from app.models.enums import SessionStatus
-from app.models.identity.user import User
+
+if TYPE_CHECKING:
+    from app.models.identity.user import User
 
 
 class UserSession(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
@@ -19,7 +32,8 @@ class UserSession(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, 
     """
     __tablename__ = "user_sessions"
     
-    user_id: Mapped[str] = mapped_column(
+    user_id: Mapped[PyUUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", name="fk_user_sessions_user_id"),
         nullable=False,
         index=True,

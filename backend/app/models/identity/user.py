@@ -4,8 +4,10 @@ User model for identity and access management.
 Represents a platform user (fraud analyst, admin, compliance officer, etc.).
 """
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import String, Boolean, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -19,6 +21,11 @@ from app.models.mixins import (
     VersionMixin,
 )
 from app.models.enums import UserStatus
+
+if TYPE_CHECKING:
+    from app.models.identity.role import Role
+    from app.models.identity.user_session import UserSession
+    from app.models.identity.refresh_token import RefreshToken
 
 
 class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
@@ -101,6 +108,27 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, Version
     profile_image_url: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True,
+    )
+    
+    # Relationships
+    role: Mapped[Role] = relationship(
+        "Role",
+        back_populates="users",
+        lazy="selectin",
+    )
+    
+    sessions: Mapped[list[UserSession]] = relationship(
+        "UserSession",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+    
+    refresh_tokens: Mapped[list[RefreshToken]] = relationship(
+        "RefreshToken",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
     
     def __repr__(self) -> str:

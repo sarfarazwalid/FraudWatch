@@ -5,15 +5,27 @@ Represents a user role that can be assigned to users.
 Roles contain permissions and define what actions users can perform.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-from app.models.mixins import UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin
+from app.models.mixins import (
+    UUIDMixin,
+    TimestampMixin,
+    SoftDeleteMixin,
+    AuditMixin,
+    VersionMixin,
+)
 from app.models.enums import RoleType
-from app.models.identity.permission import Permission
-from app.models.identity.role_permission import RolePermission
-from app.models.identity.user import User
+
+if TYPE_CHECKING:
+    from app.models.identity.permission import Permission
+    from app.models.identity.role_permission import RolePermission
+    from app.models.identity.user import User
 
 
 class Role(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):

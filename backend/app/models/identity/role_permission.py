@@ -4,11 +4,21 @@ RolePermission junction table for many-to-many relationship between roles and pe
 This is an association table that links roles to their permissions.
 """
 
-from sqlalchemy import UUID, UniqueConstraint
+from typing import Optional
+from uuid import UUID as PyUUID
+
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.models.base import Base
-from app.models.mixins import UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin
+from app.models.mixins import (
+    UUIDMixin,
+    TimestampMixin,
+    SoftDeleteMixin,
+    AuditMixin,
+    VersionMixin,
+)
 
 
 class RolePermission(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
@@ -17,11 +27,13 @@ class RolePermission(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixi
     """
     __tablename__ = "role_permissions"
     
-    role_id: Mapped[UUID] = mapped_column(
+    role_id: Mapped[PyUUID] = mapped_column(
+        UUID(as_uuid=True),
         nullable=False,
     )
     
-    permission_id: Mapped[UUID] = mapped_column(
+    permission_id: Mapped[PyUUID] = mapped_column(
+        UUID(as_uuid=True),
         nullable=False,
     )
     

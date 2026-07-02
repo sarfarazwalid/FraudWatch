@@ -5,12 +5,25 @@ Represents a granular permission that can be assigned to roles.
 Permissions define what actions can be performed on resources.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-from app.models.mixins import UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin
-from app.models.identity.role_permission import RolePermission
+from app.models.mixins import (
+    UUIDMixin,
+    TimestampMixin,
+    SoftDeleteMixin,
+    AuditMixin,
+    VersionMixin,
+)
+
+if TYPE_CHECKING:
+    from app.models.identity.role import Role
+    from app.models.identity.role_permission import RolePermission
 
 
 class Permission(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
@@ -46,7 +59,7 @@ class Permission(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, V
     )
     
     role_permissions: Mapped[list[RolePermission]] = relationship(
-        RolePermission,
+        "RolePermission",
         back_populates="permission",
         lazy="selectin",
         cascade="all, delete-orphan",
