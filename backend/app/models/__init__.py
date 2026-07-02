@@ -51,6 +51,17 @@ from app.models.fraud import (
     FraudAttachment,
 )
 
+# Machine Learning domain
+from app.models.ml import (
+    DatasetMetadata,
+    TrainingRun,
+    ModelVersion,
+    ModelMetrics,
+    FeatureImportance,
+    PredictionHistory,
+    ModelRegistry,
+)
+
 __all__ = [
     "Base",
     "UUIDMixin",
@@ -59,12 +70,14 @@ __all__ = [
     "AuditMixin",
     "VersionMixin",
     "BaseModel",
+    # Identity domain
     "User",
     "Role",
     "Permission",
     "RolePermission",
     "UserSession",
     "RefreshToken",
+    # Transaction domain
     "Currency",
     "PaymentMethod",
     "TransactionType",
@@ -75,6 +88,7 @@ __all__ = [
     "Device",
     "Location",
     "Transaction",
+    # Fraud domain
     "FraudAlert",
     "FraudCase",
     "FraudRule",
@@ -84,4 +98,12 @@ __all__ = [
     "InvestigationTimeline",
     "FraudComment",
     "FraudAttachment",
+    # Machine Learning domain
+    "DatasetMetadata",
+    "TrainingRun",
+    "ModelVersion",
+    "ModelMetrics",
+    "FeatureImportance",
+    "PredictionHistory",
+    "ModelRegistry",
 ]
