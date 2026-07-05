@@ -12,6 +12,9 @@ from app.models.transaction.transaction import Transaction
 from app.repositories.transaction import TransactionRepository
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 
+# Celery task import
+from app.workers.tasks.prediction_tasks import predict_transaction_task
+
 
 class TransactionService:
     """
@@ -62,6 +65,17 @@ class TransactionService:
         self.transaction_repo.session.add(transaction)
         await self.transaction_repo.session.flush()
         await self.transaction_repo.session.refresh(transaction)
+
+        # Publish event to Celery for async fraud prediction
+        try:
+            predict_transaction_task.delay(
+                transaction_id=transaction.id,
+                correlation_id=str(transaction.id),
+            )
+        except Exception as e:
+            # Log error but don't fail transaction creation
+            # In production: structured logging
+            print(f"Failed to queue prediction task: {e}")
 
         return transaction
 
