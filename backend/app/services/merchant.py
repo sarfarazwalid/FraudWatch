@@ -65,3 +65,44 @@ class MerchantService:
     async def search_merchants(self, query: str, skip: int = 0, limit: int = 100) -> List[Merchant]:
         """Search merchants."""
         return await self.merchant_repo.search_merchants(query, skip, limit)
+
+    async def list_merchants(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        search: Optional[str] = None,
+        filters: Optional[dict] = None,
+        sort_by: str = "name",
+        sort_order: str = "asc",
+    ) -> tuple[List[Merchant], int]:
+        """List merchants with pagination."""
+        skip = (page - 1) * page_size
+        repo_filters = {}
+        if filters:
+            if "status" in filters and filters["status"] is not None:
+                repo_filters["status"] = filters["status"]
+            if "risk_level" in filters and filters["risk_level"] is not None:
+                repo_filters["risk_level"] = filters["risk_level"]
+            if "country" in filters and filters["country"] is not None:
+                repo_filters["country"] = filters["country"]
+
+        if search:
+            merchants = await self.merchant_repo.search_merchants(search, skip, page_size)
+            total = len(merchants)
+        else:
+            merchants = await self.merchant_repo.get_all(
+                skip=skip, limit=page_size,
+                filters=repo_filters if repo_filters else None,
+                order_by=sort_by if sort_order == "asc" else f"-{sort_by}",
+            )
+            total = await self.merchant_repo.count(filters=repo_filters if repo_filters else None)
+        return merchants, total
+
+    async def deactivate_merchant(self, merchant_id: str) -> bool:
+        """Deactivate a merchant."""
+        merchant = await self.merchant_repo.get(merchant_id)
+        if not merchant:
+            return False
+        merchant.is_active = False
+        await self.merchant_repo.session.flush()
+        return True

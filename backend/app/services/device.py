@@ -61,3 +61,31 @@ class DeviceService:
     async def get_active_devices(self, skip: int = 0, limit: int = 100) -> List[Device]:
         """Get all active devices."""
         return await self.device_repo.get_active_devices(skip, limit)
+
+    async def list_devices(
+        self, page: int = 1, page_size: int = 20, search: Optional[str] = None,
+        filters: Optional[dict] = None, sort_by: str = "created_at", sort_order: str = "desc",
+    ) -> tuple[List[Device], int]:
+        skip = (page - 1) * page_size
+        repo_filters = {}
+        if filters:
+            for k in ("device_type", "is_trusted", "is_active"):
+                if k in filters and filters[k] is not None:
+                    repo_filters[k] = filters[k]
+        if search:
+            devices = await self.device_repo.search_devices(search, skip, page_size)
+            total = len(devices)
+        else:
+            devices = await self.device_repo.get_all(
+                skip=skip, limit=page_size, filters=repo_filters or None,
+                order_by=sort_by if sort_order == "asc" else f"-{sort_by}",
+            )
+            total = await self.device_repo.count(filters=repo_filters or None)
+        return devices, total
+
+    async def deactivate_device(self, device_id: str) -> bool:
+        device = await self.device_repo.get(device_id)
+        if not device: return False
+        device.is_active = False
+        await self.device_repo.session.flush()
+        return True

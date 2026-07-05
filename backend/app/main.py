@@ -24,22 +24,22 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """
     Application lifespan events.
-    
+
     Startup:
         - Initialize database connections
         - Load ML models
         - Start background workers
-    
+
     Shutdown:
         - Close database connections
         - Cleanup resources
     """
     logger.info(f"Starting {settings.project_name} v{settings.version}")
     logger.info(f"Environment: {settings.environment}")
-    
+
     # Startup logic here (database initialization, model loading, etc.)
     yield
-    
+
     # Shutdown logic here
     logger.info(f"Shutting down {settings.project_name}")
 
@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
 def create_application() -> FastAPI:
     """
     Create and configure the FastAPI application.
-    
+
     Returns:
         FastAPI: Configured application instance
     """
@@ -96,9 +96,34 @@ def create_application() -> FastAPI:
             "version": settings.version,
         }
 
-    # Include API routers here (will be added as features are implemented)
-    # from app.api.v1.auth import router as auth_router
-    # application.include_router(auth_router, prefix=settings.api_v1_prefix)
+    # Include API routers
+    from app.api.v1.auth import router as auth_router
+    from app.api.v1.users import router as users_router
+    from app.api.v1.roles import router as roles_router
+    from app.api.v1.permissions import router as permissions_router
+    from app.api.v1.transactions import router as transactions_router
+    from app.api.v1.merchants import router as merchants_router
+    from app.api.v1.devices import router as devices_router
+    from app.api.v1.locations import router as locations_router
+    from app.api.v1.fraud_alerts import router as fraud_alerts_router
+    from app.api.v1.fraud_cases import router as fraud_cases_router
+    from app.api.v1.fraud_rules import router as fraud_rules_router
+    from app.api.v1.model_registry import router as model_registry_router
+
+    api_prefix = settings.api_v1_prefix
+
+    application.include_router(auth_router, prefix=f"{api_prefix}/auth", tags=["Authentication"])
+    application.include_router(users_router, prefix=f"{api_prefix}/users", tags=["Users"])
+    application.include_router(roles_router, prefix=f"{api_prefix}/roles", tags=["Roles"])
+    application.include_router(permissions_router, prefix=f"{api_prefix}/permissions", tags=["Permissions"])
+    application.include_router(transactions_router, prefix=f"{api_prefix}", tags=["Transactions"])
+    application.include_router(merchants_router, prefix=f"{api_prefix}/merchants", tags=["Merchants"])
+    application.include_router(devices_router, prefix=f"{api_prefix}/devices", tags=["Devices"])
+    application.include_router(locations_router, prefix=f"{api_prefix}/locations", tags=["Locations"])
+    application.include_router(fraud_alerts_router, prefix=f"{api_prefix}/fraud/alerts", tags=["Fraud Alerts"])
+    application.include_router(fraud_cases_router, prefix=f"{api_prefix}/fraud/cases", tags=["Fraud Cases"])
+    application.include_router(fraud_rules_router, prefix=f"{api_prefix}/fraud/rules", tags=["Fraud Rules"])
+    application.include_router(model_registry_router, prefix=f"{api_prefix}/ml/models", tags=["Model Registry"])
 
     return application
 
