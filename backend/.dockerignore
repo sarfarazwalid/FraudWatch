@@ -1,0 +1,12 @@
+.venv
+venv
+__pycache__
+*.pyc
+.git
+*.md
+.env
+node_modules
+.alembic/
+ml/
+docs/
+frontend/

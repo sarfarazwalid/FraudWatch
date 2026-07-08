@@ -11,7 +11,7 @@ WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
 
 
 
@@ -79,18 +79,3 @@ EXPOSE 3000
 
 # Default command for development
 CMD ["npm", "run", "dev", "--prefix", "./frontend"]
-</parameter>
-<task_progress>
-- [x] Create root project structure
-- [x] Initialize frontend (Next.js + TypeScript + Tailwind)
-- [x] Initialize backend (FastAPI + SQLAlchemy)
-- [x] Set up ML folder structure
-- [ ] Create Docker configuration
-- [ ] Configure environment variables
-- [ ] Set up code quality tools
-- [ ] Create documentation and Git files
-- [ ] Set up CI/CD pipelines
-- [ ] Prepare security architecture
-- [ ] Verify complete project structure
-</task_progress>
-</write_to_file>

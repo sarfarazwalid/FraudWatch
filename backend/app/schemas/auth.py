@@ -23,7 +23,7 @@ class RegisterRequest(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=100)
     username: Optional[str] = Field(None, min_length=3, max_length=100)
     phone_number: Optional[str] = Field(None, max_length=20)
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -69,7 +69,7 @@ class SessionResponse(BaseModel):
     last_activity: datetime
     expires_at: datetime
     is_current: bool = False
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -87,7 +87,7 @@ class UserResponse(BaseModel):
     last_login: Optional[datetime]
     created_at: datetime
     role_name: Optional[str]
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -109,7 +109,7 @@ class UserProfileResponse(BaseModel):
     created_at: datetime
     role: "RoleResponse"
     permissions: list[str]
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -122,7 +122,7 @@ class RoleResponse(BaseModel):
     is_system_role: bool
     permissions: list["PermissionResponse"] = []
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -133,11 +133,12 @@ class PermissionResponse(BaseModel):
     description: Optional[str]
     resource: str
     action: str
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
-# Forward references update
-UserResponse.model_rebuild()
+# Forward references update - after all models are defined
+TokenResponse.model_rebuild()
 UserProfileResponse.model_rebuild()
 RoleResponse.model_rebuild()
+PermissionResponse.model_rebuild()

@@ -8,6 +8,7 @@ from app.dependencies.auth import get_current_user
 from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionFilters, TransactionStatistics
 from app.services.transaction import TransactionService
 from app.models.identity.user import User
+from app.repositories.transaction import TransactionRepository
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -32,7 +33,8 @@ async def list_transactions(
     session: AsyncSession = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
 ):
-    service = TransactionService(session)
+    transaction_repo = TransactionRepository(session)
+    service = TransactionService(transaction_repo)
     items, total = await service.get_transactions(
         page=page, page_size=page_size, search=search,
         merchant_id=merchant_id, status_id=status_id, risk_level_id=risk_level_id,
@@ -50,7 +52,8 @@ async def get_transaction(
     session: AsyncSession = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
 ):
-    service = TransactionService(session)
+    transaction_repo = TransactionRepository(session)
+    service = TransactionService(transaction_repo)
     item = await service.get_transaction(id)
     if not item:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -61,26 +64,29 @@ async def get_statistics(
     session: AsyncSession = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
 ):
-    service = TransactionService(session)
+    transaction_repo = TransactionRepository(session)
+    service = TransactionService(transaction_repo)
     return await service.get_statistics()
 
 @router.post("/")
 async def create_transaction(
     data: TransactionCreate,
-    session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
 ):
-    service = TransactionService(session)
+    transaction_repo = TransactionRepository(session)
+    service = TransactionService(transaction_repo)
     return await service.create_transaction(data, user_id=str(current_user.id))
 
 @router.patch("/{id}")
 async def update_transaction(
     id: str,
     data: TransactionUpdate,
-    session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
 ):
-    service = TransactionService(session)
+    transaction_repo = TransactionRepository(session)
+    service = TransactionService(transaction_repo)
     item = await service.update_transaction(id, data, user_id=str(current_user.id))
     if not item:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -89,10 +95,11 @@ async def update_transaction(
 @router.delete("/{id}")
 async def delete_transaction(
     id: str,
-    session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
 ):
-    service = TransactionService(session)
+    transaction_repo = TransactionRepository(session)
+    service = TransactionService(transaction_repo)
     result = await service.delete_transaction(id, user_id=str(current_user.id))
     if not result:
         raise HTTPException(status_code=404, detail="Transaction not found")

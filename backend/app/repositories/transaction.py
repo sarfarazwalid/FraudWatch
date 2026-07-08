@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc, asc, or_, and_
 from sqlalchemy.orm import selectinload
 from app.models.transaction.transaction import Transaction
+from app.schemas.transaction import TransactionCreate, TransactionUpdate
 from app.repositories.base import BaseRepository
 
 class TransactionRepository(BaseRepository[Transaction, TransactionCreate, TransactionUpdate]):  # type: ignore

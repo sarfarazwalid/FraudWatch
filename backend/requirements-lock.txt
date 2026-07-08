@@ -20,7 +20,9 @@ click-plugins==1.1.1.2
 click-repl==0.3.0
 colorama==0.4.6
 cryptography==49.0.0
+dnspython==2.8.0
 ecdsa==0.19.2
+email-validator==2.3.0
 Faker==20.1.0
 fastapi==0.104.1
 flake8==6.1.0
@@ -40,6 +42,7 @@ mccabe==0.7.0
 multidict==6.7.1
 mypy==1.7.1
 mypy-extensions==1.1.0
+numpy==1.26.4
 packaging==26.2
 passlib==1.7.4
 pathspec==1.1.1
@@ -78,3 +81,7 @@ watchfiles==1.2.0
 wcwidth==0.8.2
 websockets==16.0
 yarl==1.24.2
+scikit-learn==1.4.2
+scipy==1.13.0
+joblib==1.4.2
+threadpoolctl==3.5.0

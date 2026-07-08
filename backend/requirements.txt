@@ -12,6 +12,11 @@ asyncpg==0.29.0
 # Validation & Serialization
 pydantic==2.5.0
 pydantic-settings==2.1.0
+email-validator>=2.2.0
+
+# Numerical / ML runtime
+numpy==1.26.4
+scikit-learn==1.4.2
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0
