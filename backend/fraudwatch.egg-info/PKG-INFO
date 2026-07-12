@@ -1,0 +1,256 @@
+Metadata-Version: 2.4
+Name: fraudwatch
+Version: 1.0.0
+Summary: FraudWatch - AI-Powered Fraud Detection Platform
+Author: FraudWatch Team
+License: MIT
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: mypy>=1.7.0; extra == "dev"
+Dynamic: license-file
+
+# FraudWatch
+
+**AI-Powered Financial Fraud Detection & Risk Intelligence Platform**
+
+An enterprise-grade fraud detection and risk management platform inspired by systems used at Stripe, Visa, Mastercard, PayPal, and Revolut.
+
+## Architecture
+
+```
+FraudWatch/
+├── frontend/          # Next.js 15 dashboard & client application
+├── backend/           # FastAPI microservices & API layer
+├── ml/                # Machine learning pipeline & models
+├── docker/            # Container configurations
+├── docs/              # Documentation
+├── scripts/           # Deployment & utility scripts
+└── .github/           # CI/CD workflows
+```
+
+## Technology Stack
+
+### Frontend
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: TailwindCSS + shadcn/ui
+- **State**: Zustand + TanStack Query
+- **Forms**: React Hook Form + Zod
+- **Charts**: Recharts
+- **Icons**: Lucide React
+
+### Backend
+- **Framework**: FastAPI (Python 3.12)
+- **Database**: PostgreSQL 16 + SQLAlchemy 2.x
+- **Migrations**: Alembic
+- **Cache**: Redis 7
+- **Queue**: Celery
+- **Auth**: JWT + python-jose
+- **Validation**: Pydantic v2
+
+### ML Pipeline
+- **Data Processing**: pandas, numpy
+- **Models**: scikit-learn, XGBoost, Isolation Forest
+- **Explainability**: SHAP
+- **Optimization**: Optuna
+- **Serialization**: Joblib
+
+### Infrastructure
+- **Containerization**: Docker + Docker Compose
+- **CI/CD**: GitHub Actions
+- **Deployment**: Vercel (frontend) + Render (backend)
+- **Database**: Neon PostgreSQL
+- **Cache**: Upstash Redis
+
+## Getting Started
+
+### Prerequisites
+- Node.js 20+
+- Python 3.12+
+- PostgreSQL 16+
+- Redis 7+
+- Docker & Docker Compose
+
+### Development Setup
+
+#### 1. Clone the repository
+```bash
+git clone https://github.com/your-org/fraudwatch.git
+cd fraudwatch
+```
+
+#### 2. Backend Setup
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Copy environment file
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run migrations
+alembic upgrade head
+
+# Start development server
+uvicorn app.main:app --reload
+```
+
+#### 3. Frontend Setup
+```bash
+cd frontend
+npm install
+
+# Copy environment file
+cp .env.example .env.local
+# Edit .env.local with your configuration
+
+# Start development server
+npm run dev
+```
+
+#### 4. ML Environment Setup
+```bash
+cd ml
+python -m venv venv
+source venv/bin/activate
+pip install pandas numpy scikit-learn xgboost shap optuna joblib jupyter
+```
+
+### Docker Compose (Full Stack)
+
+```bash
+docker-compose up -d
+```
+
+Services will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- PostgreSQL: localhost:5432
+- Redis: localhost:6379
+
+## Project Structure
+
+### Frontend (`frontend/`)
+```
+app/                    # Next.js App Router pages
+├── (auth)/             # Authentication pages
+├── (dashboard)/        # Dashboard pages
+├── api/                # Next.js API routes
+├── layout.tsx          # Root layout
+└── page.tsx            # Landing page
+
+components/            # Reusable components
+├── layout/             # Layout components
+├── charts/             # Chart components
+├── tables/             # Table components
+├── forms/              # Form components
+├── cards/              # Card components
+└── ui/                 # shadcn/ui components
+
+hooks/                 # Custom React hooks
+services/              # API service layer
+stores/                # Zustand state management
+lib/                   # Utility libraries
+utils/                 # Helper functions
+types/                 # TypeScript type definitions
+constants/             # Application constants
+styles/                # Global styles
+```
+
+### Backend (`backend/app/`)
+```
+api/
+└── v1/                 # API v1 routes
+    └── auth/           # Authentication endpoints
+
+config/                 # Configuration management
+core/                   # Core utilities (logging, etc.)
+database/               # Database connection & session management
+models/                 # SQLAlchemy ORM models (to be added)
+schemas/                # Pydantic schemas (to be added)
+repositories/           # Data access layer (to be added)
+services/               # Business logic layer (to be added)
+middleware/             # Custom middleware
+workers/                # Celery background tasks
+utils/                  # Utility functions
+dependencies/           # FastAPI dependencies
+security/               # Auth & security utilities
+exceptions/             # Custom exception classes
+tests/                  # Test suite
+```
+
+### ML Pipeline (`ml/`)
+```
+datasets/
+├── raw/                # Raw data ingestion
+└── processed/          # Processed datasets
+
+notebooks/              # Jupyter notebooks for EDA
+preprocessing/          # Data preprocessing scripts
+feature_engineering/    # Feature engineering
+training/               # Model training scripts
+evaluation/             # Model evaluation
+models/                 # Saved model files
+artifacts/              # Model artifacts & metadata
+explainability/         # SHAP explanations
+pipelines/              # ML pipeline orchestration
+```
+
+## Documentation
+
+- [Architecture Guide](docs/architecture.md)
+- [API Documentation](docs/api.md)
+- [Development Guide](docs/development.md)
+- [Deployment Guide](docs/deployment.md)
+- [Security Policy](docs/security.md)
+
+## CI/CD
+
+GitHub Actions workflows handle:
+- Linting (Black, isort, ESLint, Prettier)
+- Testing (pytest, Jest)
+- Building (Docker images)
+- Deployment (Vercel, Render)
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Security
+
+FraudWatch handles sensitive financial data. See [docs/security.md](docs/security.md) for security practices and vulnerability reporting.
+
+## Support
+
+For issues and questions, please use [GitHub Issues](https://github.com/your-org/fraudwatch/issues).
+</parameter>
+<task_progress>
+- [x] Create root project structure
+- [x] Initialize frontend (Next.js + TypeScript + Tailwind)
+- [x] Initialize backend (FastAPI + SQLAlchemy)
+- [x] Set up ML folder structure
+- [x] Create Docker configuration
+- [x] Configure environment variables
+- [x] Prepare security architecture
+- [ ] Create documentation and Git files
+- [ ] Set up CI/CD pipelines
+- [ ] Set up code quality tools
+- [ ] Verify complete project structure
+</task_progress>
+</write_to_file>

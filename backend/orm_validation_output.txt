@@ -1,0 +1,34 @@
+
+================================================================================
+STARTING COMPREHENSIVE SQLALCHEMY ORM VALIDATION
+================================================================================
+
+================================================================================
+STEP 1: DISCOVERING SQLALCHEMY MODELS
+================================================================================
+
+[OK] Found 32 model classes
+[OK] Extracted information from 32 models
+
+--------------------------------------------------------------------------------
+STEP 5: VERIFYING SINGLE DECLARATIVE BASE
+--------------------------------------------------------------------------------
+
+[FAIL] Error discovering models: 'charmap' codec can't encode character '\u2717' in position 0: character maps to <undefined>
+
+================================================================================
+STEP 3: VERIFYING FOREIGN KEY TARGETS
+================================================================================
+Traceback (most recent call last):
+  File "C:\Important\FraudWatch\backend\comprehensive_orm_validation.py", line 689, in <module>
+    success = validator.run_all_validations()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Important\FraudWatch\backend\comprehensive_orm_validation.py", line 628, in run_all_validations
+    fk_result = self.verify_foreign_keys()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Important\FraudWatch\backend\comprehensive_orm_validation.py", line 211, in verify_foreign_keys
+    print(f"\n\u2713 Found {len(table_names)} tables: {', '.join(sorted(table_names))}")
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 2: character maps to <undefined>

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fraudwatch"
+version = "1.0.0"
+description = "FraudWatch - AI-Powered Fraud Detection Platform"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "FraudWatch Team"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "mypy>=1.7.0",
+]
+
+[tool.setuptools]
+packages = ["app", "app.api", "app.api.v1", "app.core", "app.dependencies", "app.exceptions", "app.models", "app.models.identity", "app.models.transaction", "app.models.fraud", "app.models.ml", "app.repositories", "app.schemas", "app.security", "app.services", "app.workers", "app.workers.tasks", "ml", "ml.feature_engineering", "ml.models", "ml.rules", "ml.training", "ml.evaluation", "ml.inference", "ml.deployment"]
+
+[tool.setuptools.package-dir]
+"" = "."
+"app" = "backend/app"
+"ml" = "ml"

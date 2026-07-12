@@ -31,57 +31,43 @@ if TYPE_CHECKING:
 class Role(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
     """
     Role model for access control.
-    
+
     Roles define a set of permissions that can be assigned to users.
     System roles are pre-defined and cannot be modified.
     """
     __tablename__ = "roles"
-    
+
     name: Mapped[str] = mapped_column(
         String(50),
         unique=True,
         nullable=False,
     )
-    
+
     description: Mapped[str] = mapped_column(
         String(500),
         nullable=False,
     )
-    
+
     role_type: Mapped[RoleType] = mapped_column()
-    
+
     is_system: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
     )
-    
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=True,
     )
-    
+
     # Relationships
-    permissions: Mapped[list[Permission]] = relationship(
-        "Permission",
-        secondary="role_permissions",
-        back_populates="roles",
-        lazy="selectin",
-    )
-    
     users: Mapped[list[User]] = relationship(
         "User",
         back_populates="role",
         lazy="selectin",
     )
-    
-    role_permissions: Mapped[list[RolePermission]] = relationship(
-        "RolePermission",
-        back_populates="role",
-        lazy="selectin",
-        cascade="all, delete-orphan",
-    )
-    
+
     def __repr__(self) -> str:
         return f"<Role {self.name}>"

@@ -1,0 +1,368 @@
+================================================================================
+COMPREHENSIVE SQLALCHEMY ORM VALIDATION REPORT
+================================================================================
+
+MODEL SUMMARY
+--------------------------------------------------------------------------------
+Total models discovered: 32
+
+DETAILED MODEL INFORMATION
+--------------------------------------------------------------------------------
+
+Class: Agent
+  Module: app.models.transaction.agent
+  Table: agents
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transactions -> Transaction (back_populates: agent)
+
+Class: Currency
+  Module: app.models.transaction.currency
+  Table: currencies
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transactions -> Transaction (back_populates: currency)
+
+Class: DatasetMetadata
+  Module: app.models.ml.dataset_metadata
+  Table: dataset_metadata
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - training_runs -> TrainingRun (back_populates: dataset)
+
+Class: Device
+  Module: app.models.transaction.device
+  Table: devices
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transactions -> Transaction (back_populates: device)
+
+Class: FeatureImportance
+  Module: app.models.ml.feature_importance
+  Table: feature_importance
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - model_version -> ModelVersion (back_populates: feature_importances)
+
+Class: FraudAlert
+  Module: app.models.fraud.fraud_alert
+  Table: fraud_alerts
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transaction -> Transaction
+    - rule -> FraudRule (back_populates: alerts)
+    - assigned_analyst -> User
+    - case -> FraudCase (back_populates: alert)
+
+Class: FraudAttachment
+  Module: app.models.fraud.fraud_attachment
+  Table: fraud_attachments
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - case -> FraudCase (back_populates: attachments)
+    - uploaded_by_user -> User
+
+Class: FraudCase
+  Module: app.models.fraud.fraud_case
+  Table: fraud_cases
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - alert -> FraudAlert (back_populates: case)
+    - investigator -> User
+    - timeline_entries -> InvestigationTimeline (back_populates: case)
+    - comments -> FraudComment (back_populates: case)
+    - attachments -> FraudAttachment (back_populates: case)
+
+Class: FraudComment
+  Module: app.models.fraud.fraud_comment
+  Table: fraud_comments
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - case -> FraudCase (back_populates: comments)
+    - author -> User
+
+Class: FraudRule
+  Module: app.models.fraud.fraud_rule
+  Table: fraud_rules
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - alerts -> FraudAlert (back_populates: rule)
+
+Class: InvestigationTimeline
+  Module: app.models.fraud.investigation_timeline
+  Table: investigation_timeline
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - case -> FraudCase (back_populates: timeline_entries)
+    - performed_by_user -> User
+
+Class: Location
+  Module: app.models.transaction.location
+  Table: locations
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transactions -> Transaction (back_populates: location)
+
+Class: Merchant
+  Module: app.models.transaction.merchant
+  Table: merchants
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transactions -> Transaction (back_populates: merchant)
+
+Class: ModelMetrics
+  Module: app.models.ml.model_metrics
+  Table: model_metrics
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - model_version -> ModelVersion (back_populates: metrics)
+
+Class: ModelRegistry
+  Module: app.models.ml.model_registry
+  Table: model_registry
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - current_model_version -> ModelVersion
+
+Class: ModelVersion
+  Module: app.models.ml.model_version
+  Table: model_versions
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - training_run -> TrainingRun (back_populates: model_versions)
+    - metrics -> ModelMetrics (back_populates: model_version)
+    - feature_importances -> FeatureImportance (back_populates: model_version)
+    - predictions -> PredictionHistory (back_populates: model_version)
+
+Class: PaymentMethod
+  Module: app.models.transaction.payment_method
+  Table: payment_methods
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transactions -> Transaction (back_populates: payment_method)
+
+Class: Permission
+  Module: app.models.identity.permission
+  Table: permissions
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - role_permissions -> RolePermission
+
+Class: Prediction
+  Module: app.models.fraud.prediction
+  Table: predictions
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transaction -> Transaction
+    - explanations -> PredictionExplanation (back_populates: prediction)
+
+Class: PredictionExplanation
+  Module: app.models.fraud.prediction_explanation
+  Table: prediction_explanations
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - prediction -> Prediction (back_populates: explanations)
+
+Class: PredictionHistory
+  Module: app.models.ml.prediction_history
+  Table: prediction_history
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transaction -> Transaction
+    - model_version -> ModelVersion (back_populates: predictions)
+
+Class: RefreshToken
+  Module: app.models.identity.refresh_token
+  Table: refresh_tokens
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - user -> User (back_populates: refresh_tokens)
+
+Class: RiskAssessment
+  Module: app.models.fraud.risk_assessment
+  Table: risk_assessments
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transaction -> Transaction
+
+Class: RiskLevelCode
+  Module: app.models.transaction.risk_level
+  Table: risk_levels
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transactions -> Transaction (back_populates: risk_level_ref)
+
+Class: Role
+  Module: app.models.identity.role
+  Table: roles
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - users -> User (back_populates: role)
+
+Class: RolePermission
+  Module: app.models.identity.role_permission
+  Table: role_permissions
+  Base: Base
+  Primary Key: id
+
+Class: TrainingRun
+  Module: app.models.ml.training_run
+  Table: training_runs
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - dataset -> DatasetMetadata (back_populates: training_runs)
+    - model_versions -> ModelVersion (back_populates: training_run)
+
+Class: Transaction
+  Module: app.models.transaction.transaction
+  Table: transactions
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - merchant -> Merchant (back_populates: transactions)
+    - agent -> Agent (back_populates: transactions)
+    - device -> Device (back_populates: transactions)
+    - location -> Location (back_populates: transactions)
+    - currency -> Currency (back_populates: transactions)
+    - payment_method -> PaymentMethod (back_populates: transactions)
+    - transaction_type -> TransactionType (back_populates: transactions)
+    - status_ref -> TransactionStatusModel (back_populates: transactions)
+    - risk_level_ref -> RiskLevelCode (back_populates: transactions)
+
+Class: TransactionStatusModel
+  Module: app.models.transaction.transaction_status
+  Table: transaction_statuses
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transactions -> Transaction (back_populates: status_ref)
+
+Class: TransactionType
+  Module: app.models.transaction.transaction_type
+  Table: transaction_types
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - transactions -> Transaction (back_populates: transaction_type)
+
+Class: User
+  Module: app.models.identity.user
+  Table: users
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - role -> Role (back_populates: users)
+    - sessions -> UserSession (back_populates: user)
+    - refresh_tokens -> RefreshToken (back_populates: user)
+
+Class: UserSession
+  Module: app.models.identity.user_session
+  Table: user_sessions
+  Base: Base
+  Primary Key: id
+  Relationships:
+    - user -> User (back_populates: sessions)
+
+VALIDATION RESULTS
+--------------------------------------------------------------------------------
+[PASS] Overall validation: PASSED
+
+Warnings (66):
+  [WARN] Could not get foreign keys for User: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for RolePermission: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for UserSession: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for RefreshToken: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for Transaction: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for FraudAlert: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for FraudCase: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for Prediction: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for PredictionExplanation: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for RiskAssessment: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for InvestigationTimeline: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for FraudComment: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for FraudAttachment: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for TrainingRun: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for ModelVersion: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for ModelMetrics: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for FeatureImportance: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for PredictionHistory: Boolean value of this clause is not defined
+  [WARN] Could not get foreign keys for ModelRegistry: Boolean value of this clause is not defined
+  [WARN] Back_populates mismatch: User.role references Role.users but not found
+  [WARN] Back_populates mismatch: User.sessions references UserSession.user but not found
+  [WARN] Back_populates mismatch: User.refresh_tokens references RefreshToken.user but not found
+  [WARN] Back_populates mismatch: Role.users references User.role but not found
+  [WARN] Back_populates mismatch: UserSession.user references User.sessions but not found
+  [WARN] Back_populates mismatch: RefreshToken.user references User.refresh_tokens but not found
+  [WARN] Back_populates mismatch: Currency.transactions references Transaction.currency but not found
+  [WARN] Back_populates mismatch: PaymentMethod.transactions references Transaction.payment_method but not found
+  [WARN] Back_populates mismatch: TransactionType.transactions references Transaction.transaction_type but not found
+  [WARN] Back_populates mismatch: TransactionStatusModel.transactions references Transaction.status_ref but not found
+  [WARN] Back_populates mismatch: RiskLevelCode.transactions references Transaction.risk_level_ref but not found
+  [WARN] Back_populates mismatch: Merchant.transactions references Transaction.merchant but not found
+  [WARN] Back_populates mismatch: Agent.transactions references Transaction.agent but not found
+  [WARN] Back_populates mismatch: Device.transactions references Transaction.device but not found
+  [WARN] Back_populates mismatch: Location.transactions references Transaction.location but not found
+  [WARN] Back_populates mismatch: Transaction.merchant references Merchant.transactions but not found
+  [WARN] Back_populates mismatch: Transaction.agent references Agent.transactions but not found
+  [WARN] Back_populates mismatch: Transaction.device references Device.transactions but not found
+  [WARN] Back_populates mismatch: Transaction.location references Location.transactions but not found
+  [WARN] Back_populates mismatch: Transaction.currency references Currency.transactions but not found
+  [WARN] Back_populates mismatch: Transaction.payment_method references PaymentMethod.transactions but not found
+  [WARN] Back_populates mismatch: Transaction.transaction_type references TransactionType.transactions but not found
+  [WARN] Back_populates mismatch: Transaction.status_ref references TransactionStatusModel.transactions but not found
+  [WARN] Back_populates mismatch: Transaction.risk_level_ref references RiskLevelCode.transactions but not found
+  [WARN] Back_populates mismatch: FraudAlert.rule references FraudRule.alerts but not found
+  [WARN] Back_populates mismatch: FraudAlert.case references FraudCase.alert but not found
+  [WARN] Back_populates mismatch: FraudCase.alert references FraudAlert.case but not found
+  [WARN] Back_populates mismatch: FraudCase.timeline_entries references InvestigationTimeline.case but not found
+  [WARN] Back_populates mismatch: FraudCase.comments references FraudComment.case but not found
+  [WARN] Back_populates mismatch: FraudCase.attachments references FraudAttachment.case but not found
+  [WARN] Back_populates mismatch: FraudRule.alerts references FraudAlert.rule but not found
+  [WARN] Back_populates mismatch: Prediction.explanations references PredictionExplanation.prediction but not found
+  [WARN] Back_populates mismatch: PredictionExplanation.prediction references Prediction.explanations but not found
+  [WARN] Back_populates mismatch: InvestigationTimeline.case references FraudCase.timeline_entries but not found
+  [WARN] Back_populates mismatch: FraudComment.case references FraudCase.comments but not found
+  [WARN] Back_populates mismatch: FraudAttachment.case references FraudCase.attachments but not found
+  [WARN] Back_populates mismatch: DatasetMetadata.training_runs references TrainingRun.dataset but not found
+  [WARN] Back_populates mismatch: TrainingRun.dataset references DatasetMetadata.training_runs but not found
+  [WARN] Back_populates mismatch: TrainingRun.model_versions references ModelVersion.training_run but not found
+  [WARN] Back_populates mismatch: ModelVersion.training_run references TrainingRun.model_versions but not found
+  [WARN] Back_populates mismatch: ModelVersion.metrics references ModelMetrics.model_version but not found
+  [WARN] Back_populates mismatch: ModelVersion.feature_importances references FeatureImportance.model_version but not found
+  [WARN] Back_populates mismatch: ModelVersion.predictions references PredictionHistory.model_version but not found
+  [WARN] Back_populates mismatch: ModelMetrics.model_version references ModelVersion.metrics but not found
+  [WARN] Back_populates mismatch: FeatureImportance.model_version references ModelVersion.feature_importances but not found
+  [WARN] Back_populates mismatch: PredictionHistory.model_version references ModelVersion.predictions but not found
+  [WARN] ORM tables not in migrations: agents, currencies, dataset_metadata, devices, feature_importance, fraud_alerts, fraud_attachments, fraud_cases, fraud_comments, fraud_rules, investigation_timeline, locations, merchants, model_metrics, model_registry, model_versions, payment_methods, permissions, prediction_explanations, prediction_history, predictions, refresh_tokens, risk_assessments, risk_levels, role_permissions, roles, training_runs, transaction_statuses, transaction_types, transactions, user_sessions, users
+
+Info (2):
+  [INFO] configure_mappers() executed successfully
+  [INFO] Registration flow traced successfully
+
+================================================================================

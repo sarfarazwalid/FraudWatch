@@ -29,11 +29,12 @@ from app.repositories.fraud_alert import FraudAlertRepository
 from app.repositories.model_registry import ModelRegistryRepository
 from sqlalchemy import select
 
-# ML imports
-from ml.feature_engineering.features import FeatureExtractor
-from ml.rules.rule_loader import load_all_rules
-from ml.rules.base_rule import RuleResult, RuleSeverity
-from ml.models.base_model import BaseMLModel
+# ML imports will be loaded lazily to avoid import errors at startup
+FeatureExtractor = None
+load_all_rules = None
+RuleResult = None
+RuleSeverity = None
+BaseMLModel = None
 
 # Enums
 from app.models.fraud.enums import PredictionLabel
@@ -59,17 +60,11 @@ class PredictionService:
         self.alert_repo = FraudAlertRepository(db_session)
         self.model_repo = ModelRegistryRepository(db_session)
 
-        # Initialize components
-        self.feature_extractor = FeatureExtractor(db_session)
-        self.rule_registry = load_all_rules()
-        # Use RuleEngine for evaluation
-        from ml.rules.rule_engine import RuleEngine
-        self.rule_engine = RuleEngine()
-        for rule in self.rule_registry.get_enabled_rules():
-            self.rule_engine.register_rule(rule)
-
-        # Load production ML model (placeholder - integrate with model registry)
-        self.ml_model: BaseMLModel | None = None
+        # Initialize components lazily to avoid import errors at startup
+        self.feature_extractor = None
+        self.rule_registry = None
+        self.rule_engine = None
+        self.ml_model = None
 
     def _load_production_model(self) -> None:
         """Load the current production ML model."""

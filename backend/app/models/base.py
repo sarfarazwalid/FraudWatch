@@ -21,13 +21,13 @@ convention = {
 class Base(DeclarativeBase):
     """
     Base declarative class for all ORM models.
-    
+
     All models should inherit from this class. It provides:
     - Automatic table naming
     - Metadata with naming convention
     - Common query methods (to be added via mixins)
     """
     metadata = MetaData(naming_convention=convention)
-    
-    # Default schema (can be overridden per model)
-    __table_args__ = {"schema": "public"}
+
+    # Note: Schema is managed by PostgreSQL configuration or Alembic migrations
+    # Removing schema from Base to avoid ForeignKey resolution issues

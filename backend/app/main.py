@@ -5,6 +5,14 @@ This module creates and configures the FastAPI application instance.
 Follows the application factory pattern for better testability and configuration.
 """
 
+import sys
+from pathlib import Path
+
+# Add parent directory to path to import ml module BEFORE other imports
+backend_dir = Path(__file__).parent
+project_root = backend_dir.parent
+sys.path.insert(0, str(project_root))
+
 import logging
 from contextlib import asynccontextmanager
 
@@ -18,6 +26,17 @@ from app.core.logging import setup_logging
 # Setup logging first
 setup_logging()
 logger = logging.getLogger(__name__)
+
+# Import all models FIRST to ensure they're registered with SQLAlchemy
+# before any database connections are established
+from app.models import (
+    User,
+    Role,
+    Permission,
+    RolePermission,
+    UserSession,
+    RefreshToken,
+)
 
 
 @asynccontextmanager
@@ -74,9 +93,14 @@ def create_application() -> FastAPI:
     @application.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
         logger.error(f"Unhandled exception: {exc}", exc_info=True)
+        # Always return detailed error for debugging
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"detail": "Internal server error"},
+            content={
+                "detail": "Internal server error",
+                "error": str(exc),
+                "type": type(exc).__name__,
+            },
         )
 
     # Health check endpoint

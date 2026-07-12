@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any
 
 class FraudWatchException(Exception):
     """Base exception for all FraudWatch exceptions."""
-    
+
     def __init__(
         self,
         message: str,
@@ -24,7 +24,7 @@ class FraudWatchException(Exception):
 
 class NotFoundException(FraudWatchException):
     """Raised when a requested resource is not found."""
-    
+
     def __init__(self, resource: str, identifier: str):
         super().__init__(
             message=f"{resource} not found",
@@ -35,7 +35,7 @@ class NotFoundException(FraudWatchException):
 
 class ValidationException(FraudWatchException):
     """Raised when input validation fails."""
-    
+
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(
             message=message,
@@ -46,7 +46,7 @@ class ValidationException(FraudWatchException):
 
 class AuthenticationException(FraudWatchException):
     """Raised when authentication fails."""
-    
+
     def __init__(self, message: str = "Authentication failed"):
         super().__init__(
             message=message,
@@ -56,7 +56,7 @@ class AuthenticationException(FraudWatchException):
 
 class AuthorizationException(FraudWatchException):
     """Raised when authorization fails."""
-    
+
     def __init__(self, message: str = "Insufficient permissions"):
         super().__init__(
             message=message,
@@ -66,7 +66,7 @@ class AuthorizationException(FraudWatchException):
 
 class RateLimitException(FraudWatchException):
     """Raised when rate limit is exceeded."""
-    
+
     def __init__(self, message: str = "Rate limit exceeded"):
         super().__init__(
             message=message,
@@ -76,7 +76,7 @@ class RateLimitException(FraudWatchException):
 
 class ConflictException(FraudWatchException):
     """Raised when a conflict occurs (e.g., duplicate resource)."""
-    
+
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(
             message=message,
@@ -87,7 +87,7 @@ class ConflictException(FraudWatchException):
 
 class DatabaseException(FraudWatchException):
     """Raised when a database error occurs."""
-    
+
     def __init__(self, message: str = "Database error occurred"):
         super().__init__(
             message=message,
@@ -97,25 +97,10 @@ class DatabaseException(FraudWatchException):
 
 class ExternalServiceException(FraudWatchException):
     """Raised when an external service fails."""
-    
+
     def __init__(self, service: str, message: str):
         super().__init__(
             message=f"{service} service error: {message}",
             status_code=503,
             details={"service": service},
         )
-</parameter>
-<task_progress>
-- [x] Create root project structure
-- [x] Initialize frontend (Next.js + TypeScript + Tailwind)
-- [x] Initialize backend (FastAPI + SQLAlchemy)
-- [x] Set up ML folder structure
-- [x] Create Docker configuration
-- [x] Configure environment variables
-- [ ] Set up code quality tools
-- [ ] Create documentation and Git files
-- [ ] Set up CI/CD pipelines
-- [x] Prepare security architecture
-- [ ] Verify complete project structure
-</task_progress>
-</write_to_file>

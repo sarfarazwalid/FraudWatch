@@ -11,7 +11,7 @@ This migration creates the complete database schema including:
 - JSONB columns for extensible data
 
 Revision ID: 001_initial_schema
-Revises: 
+Revises:
 Create Date: 2026-01-20
 """
 
@@ -20,6 +20,8 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.engine import Connection
+from typing import cast
 
 # revision identifiers
 revision: str = "001_initial_schema"
@@ -31,7 +33,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """
     Upgrade database schema.
-    
+
     Creates all tables, enums, constraints, and indexes in dependency order:
     1. ENUM types (no dependencies)
     2. Reference tables (currencies, etc.)
@@ -41,110 +43,110 @@ def upgrade() -> None:
     # ========================================
     # ENUM TYPES (31 total)
     # ========================================
-    
+
     # Identity domain enums (6)
     user_status = postgresql.ENUM('active', 'inactive', 'suspended', 'locked', 'pending_verification', name='user_status')
-    user_status.create(op.get_bind())
-    
+    user_status.create(cast(op.get_bind(), Connection))
+
     role_type = postgresql.ENUM('super_admin', 'admin', 'fraud_analyst', 'compliance_officer', 'viewer', name='role_type')
-    role_type.create(op.get_bind())
-    
+    role_type.create(cast(op.get_bind(), Connection))
+
     permission_action = postgresql.ENUM('create', 'read', 'update', 'delete', 'execute', name='permission_action')
-    permission_action.create(op.get_bind())
-    
+    permission_action.create(cast(op.get_bind(), Connection))
+
     session_status = postgresql.ENUM('active', 'expired', 'revoked', name='session_status')
-    session_status.create(op.get_bind())
-    
+    session_status.create(cast(op.get_bind(), Connection))
+
     token_type = postgresql.ENUM('access', 'refresh', name='token_type')
-    token_type.create(op.get_bind())
-    
+    token_type.create(cast(op.get_bind(), Connection))
+
     authentication_provider = postgresql.ENUM('local', 'sso', 'oauth2', name='authentication_provider')
-    authentication_provider.create(op.get_bind())
-    
+    authentication_provider.create(cast(op.get_bind(), Connection))
+
     # Transaction domain enums (7)
     transaction_status_value = postgresql.ENUM('pending', 'processing', 'completed', 'failed', 'flagged', 'cancelled', 'refunded', 'reversed', name='transaction_status_value')
-    transaction_status_value.create(op.get_bind())
-    
+    transaction_status_value.create(cast(op.get_bind(), Connection))
+
     risk_level_value = postgresql.ENUM('low', 'medium', 'high', 'critical', name='risk_level_value')
-    risk_level_value.create(op.get_bind())
-    
+    risk_level_value.create(cast(op.get_bind(), Connection))
+
     transaction_channel = postgresql.ENUM('mobile_app', 'web', 'ussd', 'api', 'pos', 'atm', 'agent', 'branch', name='transaction_channel')
-    transaction_channel.create(op.get_bind())
-    
+    transaction_channel.create(cast(op.get_bind(), Connection))
+
     source_system = postgresql.ENUM('core_banking', 'switch', 'wallet', 'payment_gateway', 'bill_pay', 'third_party', 'manual', name='source_system')
-    source_system.create(op.get_bind())
-    
+    source_system.create(cast(op.get_bind(), Connection))
+
     currency_code = postgresql.ENUM('USD', 'EUR', 'GBP', 'KES', 'NGN', 'GHS', 'ZAR', name='currency_code')
-    currency_code.create(op.get_bind())
-    
+    currency_code.create(cast(op.get_bind(), Connection))
+
     payment_method_type = postgresql.ENUM('card', 'bank_transfer', 'mobile_money', 'ussd', 'qr_code', name='payment_method_type')
-    payment_method_type.create(op.get_bind())
-    
+    payment_method_type.create(cast(op.get_bind(), Connection))
+
     transaction_type_value = postgresql.ENUM('debit', 'credit', 'transfer', 'withdrawal', 'deposit', 'payment', 'refund', 'fee', name='transaction_type_value')
-    transaction_type_value.create(op.get_bind())
-    
+    transaction_type_value.create(cast(op.get_bind(), Connection))
+
     # Fraud domain enums (10)
     alert_severity = postgresql.ENUM('low', 'medium', 'high', 'critical', name='alert_severity')
-    alert_severity.create(op.get_bind())
-    
+    alert_severity.create(cast(op.get_bind(), Connection))
+
     alert_status = postgresql.ENUM('new', 'triaged', 'acknowledged', 'assigned', 'escalated', 'resolved', 'dismissed', 'false_positive', name='alert_status')
-    alert_status.create(op.get_bind())
-    
+    alert_status.create(cast(op.get_bind(), Connection))
+
     case_priority = postgresql.ENUM('low', 'medium', 'high', 'critical', name='case_priority')
-    case_priority.create(op.get_bind())
-    
+    case_priority.create(cast(op.get_bind(), Connection))
+
     case_status = postgresql.ENUM('new', 'triaged', 'under_investigation', 'escalated', 'awaiting_customer', 'confirmed_fraud', 'false_positive', 'resolved', 'closed', name='case_status')
-    case_status.create(op.get_bind())
-    
+    case_status.create(cast(op.get_bind(), Connection))
+
     detection_method = postgresql.ENUM('rule_based', 'machine_learning', 'statistical', 'behavioral', 'network', 'manual', 'hybrid', name='detection_method')
-    detection_method.create(op.get_bind())
-    
+    detection_method.create(cast(op.get_bind(), Connection))
+
     prediction_label = postgresql.ENUM('fraud', 'legitimate', 'suspicious', 'unknown', name='prediction_label')
-    prediction_label.create(op.get_bind())
-    
+    prediction_label.create(cast(op.get_bind(), Connection))
+
     risk_decision = postgresql.ENUM('approve', 'review', 'reject', 'block', 'escalate', name='risk_decision')
-    risk_decision.create(op.get_bind())
-    
+    risk_decision.create(cast(op.get_bind(), Connection))
+
     timeline_action_type = postgresql.ENUM('created', 'status_changed', 'assigned', 'escalated', 'comment_added', 'attachment_added', 'note_added', 'customer_contacted', 'evidence_added', 'closed', 'reopened', name='timeline_action_type')
-    timeline_action_type.create(op.get_bind())
-    
+    timeline_action_type.create(cast(op.get_bind(), Connection))
+
     comment_visibility = postgresql.ENUM('internal', 'external', 'restricted', name='comment_visibility')
-    comment_visibility.create(op.get_bind())
-    
+    comment_visibility.create(cast(op.get_bind(), Connection))
+
     attachment_type = postgresql.ENUM('document', 'image', 'video', 'audio', 'spreadsheet', 'log_file', 'screenshot', 'other', name='attachment_type')
-    attachment_type.create(op.get_bind())
-    
+    attachment_type.create(cast(op.get_bind(), Connection))
+
     explanation_method = postgresql.ENUM('shap', 'lime', 'feature_importance', 'rule_explanation', 'counterfactual', 'attention', 'other', name='explanation_method')
-    explanation_method.create(op.get_bind())
-    
+    explanation_method.create(cast(op.get_bind(), Connection))
+
     # ML domain enums (8)
     training_status = postgresql.ENUM('pending', 'running', 'completed', 'failed', 'cancelled', 'stopped', name='training_status')
-    training_status.create(op.get_bind())
-    
+    training_status.create(cast(op.get_bind(), Connection))
+
     model_status = postgresql.ENUM('draft', 'training', 'evaluating', 'staged', 'production', 'archived', 'deprecated', 'failed', name='model_status')
-    model_status.create(op.get_bind())
-    
+    model_status.create(cast(op.get_bind(), Connection))
+
     deployment_environment = postgresql.ENUM('development', 'staging', 'production', 'canary', 'shadow', 'experiment', name='deployment_environment')
-    deployment_environment.create(op.get_bind())
-    
+    deployment_environment.create(cast(op.get_bind(), Connection))
+
     prediction_status_enum = postgresql.ENUM('pending', 'processing', 'completed', 'failed', 'timeout', name='prediction_status')
-    prediction_status_enum.create(op.get_bind())
-    
+    prediction_status_enum.create(cast(op.get_bind(), Connection))
+
     algorithm_type = postgresql.ENUM('logistic_regression', 'random_forest', 'xgboost', 'lightgbm', 'catboost', 'neural_network', 'deep_neural_network', 'convolutional_nn', 'recurrent_nn', 'transformer', 'support_vector_machine', 'decision_tree', 'gradient_boosting', 'k_means', 'dbscan', 'pca', 'autoencoder', 'voting', 'stacking', 'bagging', 'custom', 'hybrid', name='algorithm_type')
-    algorithm_type.create(op.get_bind())
-    
+    algorithm_type.create(cast(op.get_bind(), Connection))
+
     framework_type = postgresql.ENUM('scikit_learn', 'tensorflow', 'pytorch', 'xgboost', 'lightgbm', 'catboost', 'huggingface', 'spark_ml', 'custom', name='framework_type')
-    framework_type.create(op.get_bind())
-    
+    framework_type.create(cast(op.get_bind(), Connection))
+
     dataset_source = postgresql.ENUM('internal', 'external', 'synthetic', 'augmented', 'public', 's3', 'gcs', 'azure_blob', 'database', 'api', 'streaming', name='dataset_source')
-    dataset_source.create(op.get_bind())
-    
+    dataset_source.create(cast(op.get_bind(), Connection))
+
     print("✓ Created 31 ENUM types")
-    
+
     # ========================================
     # IDENTITY DOMAIN (7 tables)
     # ========================================
-    
+
     # Users table
     op.create_table(
         'users',
@@ -183,7 +185,7 @@ def upgrade() -> None:
     op.create_index('ix_users_email', 'users', ['email'])
     op.create_index('ix_users_status', 'users', ['status'])
     op.create_index('ix_users_created_at', 'users', ['created_at'])
-    
+
     # Roles table
     op.create_table(
         'roles',
@@ -204,7 +206,7 @@ def upgrade() -> None:
         sa.UniqueConstraint('name', name='uq_roles_name'),
     )
     op.create_index('ix_roles_name', 'roles', ['name'])
-    
+
     # Permissions table
     op.create_table(
         'permissions',
@@ -227,7 +229,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_permissions_resource', 'permissions', ['resource'])
     op.create_index('ix_permissions_action', 'permissions', ['action'])
-    
+
     # Role-Permission association table
     op.create_table(
         'role_permissions',
@@ -247,7 +249,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_role_permissions_role', 'role_permissions', ['role_id'])
     op.create_index('ix_role_permissions_permission', 'role_permissions', ['permission_id'])
-    
+
     # User-Role association table
     op.create_table(
         'user_roles',
@@ -262,7 +264,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_user_roles_user', 'user_roles', ['user_id'])
     op.create_index('ix_user_roles_role', 'user_roles', ['role_id'])
-    
+
     # User sessions table
     op.create_table(
         'user_sessions',
@@ -289,7 +291,7 @@ def upgrade() -> None:
     op.create_index('ix_user_sessions_user', 'user_sessions', ['user_id'])
     op.create_index('ix_user_sessions_status', 'user_sessions', ['status'])
     op.create_index('ix_user_sessions_expires', 'user_sessions', ['expires_at'])
-    
+
     # Refresh tokens table
     op.create_table(
         'refresh_tokens',
@@ -316,13 +318,13 @@ def upgrade() -> None:
     op.create_index('ix_refresh_tokens_user', 'refresh_tokens', ['user_id'])
     op.create_index('ix_refresh_tokens_family', 'refresh_tokens', ['family_id'])
     op.create_index('ix_refresh_tokens_expires', 'refresh_tokens', ['expires_at'])
-    
+
     print("✓ Identity domain: 7 tables created")
-    
+
     # ========================================
     # TRANSACTION DOMAIN (10 tables)
     # ========================================
-    
+
     # Currencies table (reference)
     op.create_table(
         'currencies',
@@ -344,7 +346,7 @@ def upgrade() -> None:
         sa.UniqueConstraint('code', name='uq_currencies_code'),
     )
     op.create_index('ix_currencies_code', 'currencies', ['code'])
-    
+
     # Payment methods table
     op.create_table(
         'payment_methods',
@@ -368,7 +370,7 @@ def upgrade() -> None:
         sa.UniqueConstraint('name', name='uq_payment_methods_name'),
     )
     op.create_index('ix_payment_methods_type', 'payment_methods', ['payment_method_type'])
-    
+
     # Transaction types table
     op.create_table(
         'transaction_types',
@@ -391,7 +393,7 @@ def upgrade() -> None:
         sa.UniqueConstraint('name', name='uq_transaction_types_name'),
     )
     op.create_index('ix_transaction_types_type', 'transaction_types', ['transaction_type'])
-    
+
     # Transaction statuses table
     op.create_table(
         'transaction_statuses',
@@ -415,7 +417,7 @@ def upgrade() -> None:
         sa.UniqueConstraint('status_value', name='uq_transaction_statuses_value'),
     )
     op.create_index('ix_transaction_statuses_value', 'transaction_statuses', ['status_value'])
-    
+
     # Risk levels table
     op.create_table(
         'risk_levels',
@@ -442,7 +444,7 @@ def upgrade() -> None:
         sa.CheckConstraint('score_min < score_max', name='ck_risk_levels_score_range'),
     )
     op.create_index('ix_risk_levels_level', 'risk_levels', ['risk_level'])
-    
+
     # Merchants table
     op.create_table(
         'merchants',
@@ -474,7 +476,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_merchants_merchant_id', 'merchants', ['merchant_id'])
     op.create_index('ix_merchants_category', 'merchants', ['category'])
-    
+
     # Agents table
     op.create_table(
         'agents',
@@ -507,7 +509,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_agents_code', 'agents', ['agent_code'])
     op.create_index('ix_agents_country', 'agents', ['country'])
-    
+
     # Devices table
     op.create_table(
         'devices',
@@ -536,7 +538,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_devices_device_id', 'devices', ['device_id'])
     op.create_index('ix_devices_type', 'devices', ['device_type'])
-    
+
     # Locations table
     op.create_table(
         'locations',
@@ -562,7 +564,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_locations_country', 'locations', ['country'])
     op.create_index('ix_locations_coordinates', 'locations', ['latitude', 'longitude'])
-    
+
     # Transactions table (core entity)
     op.create_table(
         'transactions',
@@ -621,13 +623,13 @@ def upgrade() -> None:
     op.create_index('ix_transactions_status', 'transactions', ['status_id'])
     op.create_index('ix_transactions_amount', 'transactions', ['amount'])
     op.create_index('ix_transactions_metadata', 'transactions', ['transaction_metadata'], postgresql_using='gin')
-    
+
     print("✓ Transaction domain: 10 tables created")
-    
+
     # ========================================
     # FRAUD DOMAIN (9 tables)
     # ========================================
-    
+
     # Fraud rules table
     op.create_table(
         'fraud_rules',
@@ -645,7 +647,7 @@ def upgrade() -> None:
         sa.Column('is_active', sa.Boolean, nullable=False, server_default='true'),
         sa.Column('rule_conditions', JSONB, nullable=False),
         sa.Column('actions', JSONB, nullable=False),
-        sa.Column('False, sa.Integer, nullable=False, server_default='0'),
+        sa.Column('false_count', sa.Integer, nullable=False, server_default='0'),
         sa.Column('true_count', sa.Integer, nullable=False, server_default='0'),
         sa.Column('precision', sa.Numeric(5, 4), nullable=True),
         sa.Column('last_triggered', sa.DateTime(timezone=True), nullable=True),
@@ -659,7 +661,7 @@ def upgrade() -> None:
     op.create_index('ix_fraud_rules_name', 'fraud_rules', ['rule_name'])
     op.create_index('ix_fraud_rules_active', 'fraud_rules', ['is_active', 'priority'])
     op.create_index('ix_fraud_rules_conditions', 'fraud_rules', ['rule_conditions'], postgresql_using='gin')
-    
+
     # Fraud alerts table
     op.create_table(
         'fraud_alerts',
@@ -695,7 +697,7 @@ def upgrade() -> None:
     op.create_index('ix_fraud_alerts_severity', 'fraud_alerts', ['alert_severity'])
     op.create_index('ix_fraud_alerts_score', 'fraud_alerts', ['alert_score'])
     op.create_index('ix_fraud_alerts_created', 'fraud_alerts', ['created_at'])
-    
+
     # Fraud cases table
     op.create_table(
         'fraud_cases',
@@ -733,7 +735,7 @@ def upgrade() -> None:
     op.create_index('ix_fraud_cases_status', 'fraud_cases', ['case_status'])
     op.create_index('ix_fraud_cases_priority', 'fraud_cases', ['case_priority'])
     op.create_index('ix_fraud_cases_assigned', 'fraud_cases', ['assigned_to'])
-    
+
     # Risk assessments table
     op.create_table(
         'risk_assessments',
@@ -768,7 +770,7 @@ def upgrade() -> None:
     op.create_index('ix_risk_assessments_transaction', 'risk_assessments', ['transaction_id'])
     op.create_index('ix_risk_assessments_score', 'risk_assessments', ['assessment_score'])
     op.create_index('ix_risk_assessments_decision', 'risk_assessments', ['risk_decision'])
-    
+
     # Investigation timeline table
     op.create_table(
         'investigation_timeline',
@@ -796,7 +798,7 @@ def upgrade() -> None:
     op.create_index('ix_investigation_timeline_case', 'investigation_timeline', ['case_id'])
     op.create_index('ix_investigation_timeline_action', 'investigation_timeline', ['action_type'])
     op.create_index('ix_investigation_timeline_performed', 'investigation_timeline', ['performed_at'])
-    
+
     # Fraud comments table
     op.create_table(
         'fraud_comments',
@@ -825,7 +827,7 @@ def upgrade() -> None:
     op.create_index('ix_fraud_comments_case', 'fraud_comments', ['case_id'])
     op.create_index('ix_fraud_comments_author', 'fraud_comments', ['author_id'])
     op.create_index('ix_fraud_comments_visibility', 'fraud_comments', ['comment_visibility'])
-    
+
     # Fraud attachments table
     op.create_table(
         'fraud_attachments',
@@ -856,7 +858,7 @@ def upgrade() -> None:
     op.create_index('ix_fraud_attachments_case', 'fraud_attachments', ['case_id'])
     op.create_index('ix_fraud_attachments_type', 'fraud_attachments', ['attachment_type'])
     op.create_index('ix_fraud_attachments_uploaded', 'fraud_attachments', ['uploaded_by'])
-    
+
     # Predictions table
     op.create_table(
         'predictions',
@@ -888,7 +890,7 @@ def upgrade() -> None:
     op.create_index('ix_predictions_model', 'predictions', ['model_version_id', 'prediction_timestamp'])
     op.create_index('ix_predictions_timestamp', 'predictions', ['prediction_timestamp'])
     op.create_index('ix_predictions_label', 'predictions', ['predicted_label'])
-    
+
     # Prediction explanations table
     op.create_table(
         'prediction_explanations',
@@ -906,7 +908,7 @@ def upgrade() -> None:
         sa.Column('top_features', JSONB, nullable=True),
         sa.Column('shap_values', JSONB, nullable=True),
         sa.Column('lime_weights', JSONB, nullable=True),
-        sa.Column(' generated_at', sa.DateTime(timezone=True), nullable=False),
+        sa.Column('generated_at', sa.DateTime(timezone=True), nullable=False),
         sa.Column('model_version', sa.String(100), nullable=True),
         sa.ForeignKeyConstraint(['prediction_id'], ['predictions.id'], name='fk_prediction_explanations_prediction_id', ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['created_by'], ['users.id'], name='fk_prediction_explanations_created_by'),
@@ -915,13 +917,13 @@ def upgrade() -> None:
     )
     op.create_index('ix_prediction_explanations_prediction', 'prediction_explanations', ['prediction_id'])
     op.create_index('ix_prediction_explanations_method', 'prediction_explanations', ['explanation_method'])
-    
+
     print("✓ Fraud domain: 8 tables created")
-    
+
     # ========================================
     # MACHINE LEARNING DOMAIN (7 tables)
     # ========================================
-    
+
     # Dataset metadata table
     op.create_table(
         'dataset_metadata',
@@ -951,7 +953,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_dataset_metadata_name', 'dataset_metadata', ['dataset_name'])
     op.create_index('ix_dataset_metadata_source', 'dataset_metadata', ['source'])
-    
+
     # Training runs table
     op.create_table(
         'training_runs',
@@ -984,7 +986,7 @@ def upgrade() -> None:
     op.create_index('ix_training_runs_dataset', 'training_runs', ['dataset_id'])
     op.create_index('ix_training_runs_status', 'training_runs', ['training_status'])
     op.create_index('ix_training_runs_started', 'training_runs', ['started_at'])
-    
+
     # Model versions table
     op.create_table(
         'model_versions',
@@ -1019,7 +1021,7 @@ def upgrade() -> None:
     op.create_index('ix_model_versions_status', 'model_versions', ['status'])
     op.create_index('ix_model_versions_deployed', 'model_versions', ['deployed'])
     op.create_index('ix_model_versions_training_run', 'model_versions', ['training_run_id'])
-    
+
     # Model metrics table
     op.create_table(
         'model_metrics',
@@ -1060,7 +1062,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_model_metrics_version', 'model_metrics', ['model_version_id'])
     op.create_index('ix_model_metrics_timestamp', 'model_metrics', ['evaluation_timestamp'])
-    
+
     # Feature importance table
     op.create_table(
         'feature_importance',
@@ -1087,7 +1089,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_feature_importance_model', 'feature_importance', ['model_version_id'])
     op.create_index('ix_feature_importance_ranking', 'feature_importance', ['model_version_id', 'ranking'])
-    
+
     # Prediction history table
     op.create_table(
         'prediction_history',
@@ -1121,7 +1123,7 @@ def upgrade() -> None:
     op.create_index('ix_prediction_history_model', 'prediction_history', ['model_version_id'])
     op.create_index('ix_prediction_history_timestamp', 'prediction_history', ['prediction_timestamp'])
     op.create_index('ix_prediction_history_status', 'prediction_history', ['status'])
-    
+
     # Model registry table
     op.create_table(
         'model_registry',
@@ -1151,7 +1153,7 @@ def upgrade() -> None:
     op.create_index('ix_model_registry_name', 'model_registry', ['model_name'])
     op.create_index('ix_model_registry_environment', 'model_registry', ['deployment_environment'])
     op.create_index('ix_model_registry_active', 'model_registry', ['is_active'])
-    
+
     print("✓ ML domain: 7 tables created")
     print("\n✓✓✓ INITIAL SCHEMA CREATION COMPLETE ✓✓✓")
     print("  - 31 ENUM types")
@@ -1163,7 +1165,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     """
     Downgrade database schema.
-    
+
     Drops all tables and enums in reverse dependency order:
     1. Dependent entities first (predictions, alerts, etc.)
     2. Core entities second (transactions, users, etc.)
@@ -1178,7 +1180,7 @@ def downgrade() -> None:
     op.drop_table('model_versions')
     op.drop_table('training_runs')
     op.drop_table('dataset_metadata')
-    
+
     # Drop fraud domain tables
     op.drop_table('fraud_attachments')
     op.drop_table('fraud_comments')
@@ -1189,7 +1191,7 @@ def downgrade() -> None:
     op.drop_table('predictions')
     op.drop_table('fraud_rules')
     op.drop_table('fraud_alerts')
-    
+
     # Drop transaction domain tables
     op.drop_table('transactions')
     op.drop_table('locations')
@@ -1201,7 +1203,7 @@ def downgrade() -> None:
     op.drop_table('transaction_types')
     op.drop_table('payment_methods')
     op.drop_table('currencies')
-    
+
     # Drop identity domain tables
     op.drop_table('refresh_tokens')
     op.drop_table('user_sessions')
@@ -1210,7 +1212,7 @@ def downgrade() -> None:
     op.drop_table('users', checkfirst=False)
     op.drop_table('roles', checkfirst=False)
     op.drop_table('permissions', checkfirst=False)
-    
+
     # Drop ENUM types in reverse order
     enums = [
         'dataset_source', 'framework_type', 'algorithm_type',
@@ -1225,11 +1227,11 @@ def downgrade() -> None:
         'authentication_provider', 'token_type',
         'session_status', 'permission_action', 'role_type', 'user_status'
     ]
-    
+
     for enum_name in enums:
         try:
             op.execute(f'DROP TYPE IF EXISTS {enum_name}')
         except:
             pass
-    
+
     print("✓ Database schema downgraded to base")
