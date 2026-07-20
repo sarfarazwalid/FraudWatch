@@ -11,6 +11,7 @@ import os
 from typing import Any
 
 from celery import Celery
+from kombu import Queue
 from celery.signals import task_postrun, task_prerun, worker_ready
 import structlog
 
@@ -38,24 +39,12 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 
 # Queue definitions with priorities
-CELERY_QUEUES = {
-    "fraud_prediction_queue": {
-        "priority": 1,  # Highest priority
-        "routing_key": "fraud_prediction_queue",
-    },
-    "alert_generation_queue": {
-        "priority": 2,
-        "routing_key": "alert_generation_queue",
-    },
-    "model_training_queue": {
-        "priority": 3,
-        "routing_key": "model_training_queue",
-    },
-    "analytics_queue": {
-        "priority": 4,  # Lowest priority
-        "routing_key": "analytics_queue",
-    },
-}
+CELERY_QUEUES = [
+    Queue("fraud_prediction_queue", routing_key="fraud_prediction_queue", queue_arguments={"priority": 1}),
+    Queue("alert_generation_queue", routing_key="alert_generation_queue", queue_arguments={"priority": 2}),
+    Queue("model_training_queue", routing_key="model_training_queue", queue_arguments={"priority": 3}),
+    Queue("analytics_queue", routing_key="analytics_queue", queue_arguments={"priority": 4}),
+]
 
 # Default queue
 CELERY_TASK_DEFAULT_QUEUE = "fraud_prediction_queue"
@@ -149,6 +138,7 @@ def create_celery_app() -> Celery:
             "app.workers.tasks.model_tasks",
             "app.workers.tasks.analytics_tasks",
         ],
+        task_queues=CELERY_QUEUES,
     )
 
     # Load configuration
@@ -166,7 +156,6 @@ def create_celery_app() -> Celery:
         accept_content=CELERY_ACCEPT_CONTENT,
         task_default_queue=CELERY_TASK_DEFAULT_QUEUE,
         task_default_routing_key=CELERY_TASK_DEFAULT_ROUTING_KEY,
-        task_queues=list(CELERY_QUEUES.keys()),
         task_routes=CELERY_TASK_ROUTES,
         task_default_retry_delay=CELERY_TASK_DEFAULT_RETRY_DELAY,
         task_max_retries=CELERY_TASK_MAX_RETRIES,

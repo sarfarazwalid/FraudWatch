@@ -1,9 +1,3 @@
-"""
-Transaction service.
-
-Handles transaction management business logic.
-"""
-
 from datetime import datetime, timezone
 from typing import Optional, List
 from uuid import UUID
@@ -12,30 +6,11 @@ from app.models.transaction.transaction import Transaction
 from app.repositories.transaction import TransactionRepository
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 
-# Celery task import
-from app.workers.tasks.prediction_tasks import predict_transaction_task
-
-
 class TransactionService:
-    """
-    Service for transaction operations.
-
-    Handles transaction creation, retrieval, and immutability enforcement.
-    """
-
     def __init__(self, transaction_repo: TransactionRepository):
         self.transaction_repo = transaction_repo
 
     async def create_transaction(self, transaction_data: TransactionCreate) -> Transaction:
-        """
-        Create a new transaction.
-
-        Args:
-            transaction_data: Transaction creation data
-
-        Returns:
-            Created transaction
-        """
         # Create transaction from schema
         transaction = Transaction(
             transaction_reference=transaction_data.transaction_reference,
@@ -67,7 +42,10 @@ class TransactionService:
         await self.transaction_repo.session.refresh(transaction)
 
         # Publish event to Celery for async fraud prediction
+        # Lazy import to avoid circular dependency:
+        # prediction_tasks -> PredictionService -> services.__init__ -> TransactionService -> prediction_tasks
         try:
+            from app.workers.tasks.prediction_tasks import predict_transaction_task
             predict_transaction_task.delay(
                 transaction_id=transaction.id,
                 correlation_id=str(transaction.id),
@@ -80,11 +58,9 @@ class TransactionService:
         return transaction
 
     async def get_transaction(self, transaction_id: str) -> Optional[Transaction]:
-        """Get transaction by ID."""
         return await self.transaction_repo.get(transaction_id)
 
     async def get_transaction_by_reference(self, reference: str) -> Optional[Transaction]:
-        """Get transaction by transaction reference (not yet available)."""
         # Placeholder for transaction reference lookup
         return None
 
@@ -93,18 +69,7 @@ class TransactionService:
         transaction_id: str,
         update_data: TransactionUpdate
     ) -> Optional[Transaction]:
-        """
-        Update transaction (limited fields only).
 
-        Transactions are immutable after creation except for status updates.
-
-        Args:
-            transaction_id: Transaction ID
-            update_data: Update data
-
-        Returns:
-            Updated transaction or None
-        """
         transaction = await self.transaction_repo.get(transaction_id)
         if not transaction:
             return None
@@ -125,15 +90,6 @@ class TransactionService:
         return transaction
 
     async def delete_transaction(self, transaction_id: str) -> bool:
-        """
-        Delete transaction (soft delete).
-
-        Args:
-            transaction_id: Transaction ID
-
-        Returns:
-            True if deleted, False if not found
-        """
         transaction = await self.transaction_repo.get(transaction_id)
         if not transaction:
             return False
@@ -163,7 +119,6 @@ class TransactionService:
         sort_by: str = "transaction_timestamp",
         sort_order: str = "desc",
     ):
-        """List transactions with filtering."""
         return await self.transaction_repo.list_transactions(
             page=page,
             page_size=page_size,

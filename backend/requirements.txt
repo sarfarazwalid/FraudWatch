@@ -16,6 +16,7 @@ email-validator>=2.2.0
 
 # Numerical / ML runtime
 numpy==1.26.4
+pandas==2.1.4
 scikit-learn==1.4.2
 
 # Authentication & Security

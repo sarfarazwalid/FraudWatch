@@ -1,0 +1,43 @@
+.git
+.gitattributes
+.editorconfig
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+*.md
+*.log
+*.txt
+.env
+.env.local
+.DS_Store
+
+# Node
+node_modules
+.next
+**/node_modules
+**/.next
+
+# Python virtual envs
+.venv
+venv
+**/.venv
+**/venv
+.mypy_cache
+**/.mypy_cache
+.pytest_cache
+.alembic
+**/__pycache__
+
+# Project specific - large dirs
+ml/artifacts/
+ml/datasets/
+ml/notebooks/
+backend/docs/
+backend/seed/
+backend/tests/
+backend/scripts/
+backend/alembic/
+docs/
+frontend/public/

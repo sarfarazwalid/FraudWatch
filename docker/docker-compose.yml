@@ -121,8 +121,8 @@ services:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
       interval: 30s
       timeout: 10s
-      start_period: 10s
-      retries: 3
+      start_period: 60s
+      retries: 5
     networks:
       - fraudwatch-network
 

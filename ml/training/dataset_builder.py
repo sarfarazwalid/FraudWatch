@@ -1,10 +1,3 @@
-"""
-Dataset builder for ML training pipeline.
-
-Responsible for constructing training datasets from transaction and fraud data,
-handling class imbalance, and ensuring reproducibility through versioning.
-"""
-
 from __future__ import annotations
 
 import hashlib
@@ -20,7 +13,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.config.settings import get_settings
+from app.config.settings import settings
 from app.models.fraud.fraud_alert import FraudAlert
 from app.models.fraud.prediction import Prediction
 from app.models.ml.dataset_metadata import DatasetMetadata
@@ -78,24 +71,6 @@ class DatasetVersion:
 
 
 class DatasetBuilder:
-    """
-    constructs ML training datasets from production data.
-
-    Handles:
-    - Data extraction from Transaction and Fraud tables
-    - Label generation (fraud vs non-fraud)
-    - Class imbalance handling (SMOTE, weighting info)
-    - Feature engineering reuse
-    - Time-based or random splitting
-    - Dataset versioning and persistence
-
-    Design Principles:
-    - Reproducibility: Deterministic data extraction and splitting
-    - Separation: Training plane isolated from inference plane
-    - Lineage: Complete tracking of data sources and transformations
-    - Performance: Efficient batch loading from database
-    """
-
     def __init__(
         self,
         session_factory: sessionmaker,
@@ -128,22 +103,6 @@ class DatasetBuilder:
         balance_classes: bool = True,
         sampling_strategy: str = "auto",
     ) -> DatasetVersion:
-        """
-        Build complete training dataset from production data.
-
-        Args:
-            start_date: Start date for data extraction
-            end_date: End date for data extraction
-            min_amount: Minimum transaction amount filter
-            max_amount: Maximum transaction amount filter
-            include_features: Specific features to include
-            exclude_features: Features to exclude
-            balance_classes: Whether to apply class balancing
-            sampling_strategy: SMOTE sampling strategy
-
-        Returns:
-            DatasetVersion object with complete dataset information
-        """
         logger.info("Building dataset from production data")
 
         # Set default date range (last 90 days)
