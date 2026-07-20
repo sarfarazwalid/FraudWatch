@@ -3,8 +3,8 @@ Seeder for identity data: roles, permissions, users.
 """
 
 import random
+import bcrypt
 from uuid import uuid4
-from passlib.hash import bcrypt
 from seed.base import BaseSeeder
 from seed.utils import fake, generate_email, random_phone
 from app.models.identity.role import Role
@@ -14,7 +14,7 @@ from app.models.identity.user import User
 from app.models.enums import RoleType, UserStatus
 
 # Default password for all seeded users (hashed)
-DEFAULT_PASSWORD = bcrypt.hash("FraudWatch@2024")
+DEFAULT_PASSWORD = bcrypt.hashpw("FraudWatch@2024".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 # ── Roles ──
 ROLES = [
@@ -128,7 +128,7 @@ class IdentitySeeder(BaseSeeder):
         # Create roles
         role_records = []
         for r in ROLES:
-            role = Role(name=r["name"], description=r["description"], role_type=r["role_type"], is_system=r["is_system"])
+            role = Role(name=r["name"], description=r["description"], role_type=r["role_type"], is_system_role=r["is_system"])
             self.session.add(role)
             await self.session.flush()
             role_records.append(role)

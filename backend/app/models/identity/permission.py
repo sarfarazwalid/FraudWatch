@@ -23,6 +23,7 @@ from app.models.mixins import (
 
 if TYPE_CHECKING:
     from app.models.identity.role_permission import RolePermission
+    from app.models.identity.role import Role
 
 
 class Permission(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
@@ -55,6 +56,13 @@ class Permission(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, V
         "RolePermission",
         lazy="selectin",
         cascade="all, delete-orphan",
+    )
+
+    roles: Mapped[list[Role]] = relationship(
+        "Role",
+        secondary="role_permissions",
+        back_populates="permissions",
+        lazy="selectin",
     )
 
     def __repr__(self) -> str:

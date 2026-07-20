@@ -50,7 +50,7 @@ class Role(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, Version
 
     role_type: Mapped[RoleType] = mapped_column()
 
-    is_system: Mapped[bool] = mapped_column(
+    is_system_role: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
@@ -66,6 +66,13 @@ class Role(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, Version
     users: Mapped[list[User]] = relationship(
         "User",
         back_populates="role",
+        lazy="selectin",
+    )
+
+    permissions: Mapped[list[Permission]] = relationship(
+        "Permission",
+        secondary="role_permissions",
+        back_populates="roles",
         lazy="selectin",
     )
 

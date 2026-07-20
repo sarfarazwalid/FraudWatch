@@ -20,8 +20,6 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.engine import Connection
-from typing import cast
 
 # revision identifiers
 revision: str = "001_initial_schema"
@@ -42,104 +40,56 @@ def upgrade() -> None:
     """
     # ========================================
     # ENUM TYPES (31 total)
+    # Create them explicitly, then use create_type=False in table columns
     # ========================================
 
     # Identity domain enums (6)
-    user_status = postgresql.ENUM('active', 'inactive', 'suspended', 'locked', 'pending_verification', name='user_status')
-    user_status.create(cast(op.get_bind(), Connection))
-
-    role_type = postgresql.ENUM('super_admin', 'admin', 'fraud_analyst', 'compliance_officer', 'viewer', name='role_type')
-    role_type.create(cast(op.get_bind(), Connection))
-
-    permission_action = postgresql.ENUM('create', 'read', 'update', 'delete', 'execute', name='permission_action')
-    permission_action.create(cast(op.get_bind(), Connection))
-
-    session_status = postgresql.ENUM('active', 'expired', 'revoked', name='session_status')
-    session_status.create(cast(op.get_bind(), Connection))
-
-    token_type = postgresql.ENUM('access', 'refresh', name='token_type')
-    token_type.create(cast(op.get_bind(), Connection))
-
-    authentication_provider = postgresql.ENUM('local', 'sso', 'oauth2', name='authentication_provider')
-    authentication_provider.create(cast(op.get_bind(), Connection))
-
+    user_status = postgresql.ENUM('active', 'inactive', 'suspended', 'locked', 'pending_verification', name='user_status', create_type=False)
+    role_type = postgresql.ENUM('super_admin', 'admin', 'fraud_analyst', 'compliance_officer', 'viewer', name='role_type', create_type=False)
+    permission_action = postgresql.ENUM('create', 'read', 'update', 'delete', 'execute', name='permission_action', create_type=False)
+    session_status = postgresql.ENUM('active', 'expired', 'revoked', name='session_status', create_type=False)
+    token_type = postgresql.ENUM('access', 'refresh', name='token_type', create_type=False)
+    authentication_provider = postgresql.ENUM('local', 'sso', 'oauth2', name='authentication_provider', create_type=False)
     # Transaction domain enums (7)
-    transaction_status_value = postgresql.ENUM('pending', 'processing', 'completed', 'failed', 'flagged', 'cancelled', 'refunded', 'reversed', name='transaction_status_value')
-    transaction_status_value.create(cast(op.get_bind(), Connection))
-
-    risk_level_value = postgresql.ENUM('low', 'medium', 'high', 'critical', name='risk_level_value')
-    risk_level_value.create(cast(op.get_bind(), Connection))
-
-    transaction_channel = postgresql.ENUM('mobile_app', 'web', 'ussd', 'api', 'pos', 'atm', 'agent', 'branch', name='transaction_channel')
-    transaction_channel.create(cast(op.get_bind(), Connection))
-
-    source_system = postgresql.ENUM('core_banking', 'switch', 'wallet', 'payment_gateway', 'bill_pay', 'third_party', 'manual', name='source_system')
-    source_system.create(cast(op.get_bind(), Connection))
-
-    currency_code = postgresql.ENUM('USD', 'EUR', 'GBP', 'KES', 'NGN', 'GHS', 'ZAR', name='currency_code')
-    currency_code.create(cast(op.get_bind(), Connection))
-
-    payment_method_type = postgresql.ENUM('card', 'bank_transfer', 'mobile_money', 'ussd', 'qr_code', name='payment_method_type')
-    payment_method_type.create(cast(op.get_bind(), Connection))
-
-    transaction_type_value = postgresql.ENUM('debit', 'credit', 'transfer', 'withdrawal', 'deposit', 'payment', 'refund', 'fee', name='transaction_type_value')
-    transaction_type_value.create(cast(op.get_bind(), Connection))
-
+    transaction_status_value = postgresql.ENUM('pending', 'processing', 'completed', 'failed', 'flagged', 'cancelled', 'refunded', 'reversed', name='transaction_status_value', create_type=False)
+    risk_level_value = postgresql.ENUM('low', 'medium', 'high', 'critical', name='risk_level_value', create_type=False)
+    transaction_channel = postgresql.ENUM('mobile_app', 'web', 'ussd', 'api', 'pos', 'atm', 'agent', 'branch', name='transaction_channel', create_type=False)
+    source_system = postgresql.ENUM('core_banking', 'switch', 'wallet', 'payment_gateway', 'bill_pay', 'third_party', 'manual', name='source_system', create_type=False)
+    currency_code = postgresql.ENUM('USD', 'EUR', 'GBP', 'KES', 'NGN', 'GHS', 'ZAR', name='currency_code', create_type=False)
+    payment_method_type = postgresql.ENUM('card', 'bank_transfer', 'mobile_money', 'ussd', 'qr_code', name='payment_method_type', create_type=False)
+    transaction_type_value = postgresql.ENUM('debit', 'credit', 'transfer', 'withdrawal', 'deposit', 'payment', 'refund', 'fee', name='transaction_type_value', create_type=False)
     # Fraud domain enums (10)
-    alert_severity = postgresql.ENUM('low', 'medium', 'high', 'critical', name='alert_severity')
-    alert_severity.create(cast(op.get_bind(), Connection))
-
-    alert_status = postgresql.ENUM('new', 'triaged', 'acknowledged', 'assigned', 'escalated', 'resolved', 'dismissed', 'false_positive', name='alert_status')
-    alert_status.create(cast(op.get_bind(), Connection))
-
-    case_priority = postgresql.ENUM('low', 'medium', 'high', 'critical', name='case_priority')
-    case_priority.create(cast(op.get_bind(), Connection))
-
-    case_status = postgresql.ENUM('new', 'triaged', 'under_investigation', 'escalated', 'awaiting_customer', 'confirmed_fraud', 'false_positive', 'resolved', 'closed', name='case_status')
-    case_status.create(cast(op.get_bind(), Connection))
-
-    detection_method = postgresql.ENUM('rule_based', 'machine_learning', 'statistical', 'behavioral', 'network', 'manual', 'hybrid', name='detection_method')
-    detection_method.create(cast(op.get_bind(), Connection))
-
-    prediction_label = postgresql.ENUM('fraud', 'legitimate', 'suspicious', 'unknown', name='prediction_label')
-    prediction_label.create(cast(op.get_bind(), Connection))
-
-    risk_decision = postgresql.ENUM('approve', 'review', 'reject', 'block', 'escalate', name='risk_decision')
-    risk_decision.create(cast(op.get_bind(), Connection))
-
-    timeline_action_type = postgresql.ENUM('created', 'status_changed', 'assigned', 'escalated', 'comment_added', 'attachment_added', 'note_added', 'customer_contacted', 'evidence_added', 'closed', 'reopened', name='timeline_action_type')
-    timeline_action_type.create(cast(op.get_bind(), Connection))
-
-    comment_visibility = postgresql.ENUM('internal', 'external', 'restricted', name='comment_visibility')
-    comment_visibility.create(cast(op.get_bind(), Connection))
-
-    attachment_type = postgresql.ENUM('document', 'image', 'video', 'audio', 'spreadsheet', 'log_file', 'screenshot', 'other', name='attachment_type')
-    attachment_type.create(cast(op.get_bind(), Connection))
-
-    explanation_method = postgresql.ENUM('shap', 'lime', 'feature_importance', 'rule_explanation', 'counterfactual', 'attention', 'other', name='explanation_method')
-    explanation_method.create(cast(op.get_bind(), Connection))
-
+    alert_severity = postgresql.ENUM('low', 'medium', 'high', 'critical', name='alert_severity', create_type=False)
+    alert_status = postgresql.ENUM('new', 'triaged', 'acknowledged', 'assigned', 'escalated', 'resolved', 'dismissed', 'false_positive', name='alert_status', create_type=False)
+    case_priority = postgresql.ENUM('low', 'medium', 'high', 'critical', name='case_priority', create_type=False)
+    case_status = postgresql.ENUM('new', 'triaged', 'under_investigation', 'escalated', 'awaiting_customer', 'confirmed_fraud', 'false_positive', 'resolved', 'closed', name='case_status', create_type=False)
+    detection_method = postgresql.ENUM('rule_based', 'machine_learning', 'statistical', 'behavioral', 'network', 'manual', 'hybrid', name='detection_method', create_type=False)
+    prediction_label = postgresql.ENUM('fraud', 'legitimate', 'suspicious', 'unknown', name='prediction_label', create_type=False)
+    risk_decision = postgresql.ENUM('approve', 'review', 'reject', 'block', 'escalate', name='risk_decision', create_type=False)
+    timeline_action_type = postgresql.ENUM('created', 'status_changed', 'assigned', 'escalated', 'comment_added', 'attachment_added', 'note_added', 'customer_contacted', 'evidence_added', 'closed', 'reopened', name='timeline_action_type', create_type=False)
+    comment_visibility = postgresql.ENUM('internal', 'external', 'restricted', name='comment_visibility', create_type=False)
+    attachment_type = postgresql.ENUM('document', 'image', 'video', 'audio', 'spreadsheet', 'log_file', 'screenshot', 'other', name='attachment_type', create_type=False)
+    explanation_method = postgresql.ENUM('shap', 'lime', 'feature_importance', 'rule_explanation', 'counterfactual', 'attention', 'other', name='explanation_method', create_type=False)
     # ML domain enums (8)
-    training_status = postgresql.ENUM('pending', 'running', 'completed', 'failed', 'cancelled', 'stopped', name='training_status')
-    training_status.create(cast(op.get_bind(), Connection))
+    training_status = postgresql.ENUM('pending', 'running', 'completed', 'failed', 'cancelled', 'stopped', name='training_status', create_type=False)
+    model_status = postgresql.ENUM('draft', 'training', 'evaluating', 'staged', 'production', 'archived', 'deprecated', 'failed', name='model_status', create_type=False)
+    deployment_environment = postgresql.ENUM('development', 'staging', 'production', 'canary', 'shadow', 'experiment', name='deployment_environment', create_type=False)
+    prediction_status_enum = postgresql.ENUM('pending', 'processing', 'completed', 'failed', 'timeout', name='prediction_status', create_type=False)
+    algorithm_type = postgresql.ENUM('logistic_regression', 'random_forest', 'xgboost', 'lightgbm', 'catboost', 'neural_network', 'deep_neural_network', 'convolutional_nn', 'recurrent_nn', 'transformer', 'support_vector_machine', 'decision_tree', 'gradient_boosting', 'k_means', 'dbscan', 'pca', 'autoencoder', 'voting', 'stacking', 'bagging', 'custom', 'hybrid', name='algorithm_type', create_type=False)
+    framework_type = postgresql.ENUM('scikit_learn', 'tensorflow', 'pytorch', 'xgboost', 'lightgbm', 'catboost', 'huggingface', 'spark_ml', 'custom', name='framework_type', create_type=False)
+    dataset_source = postgresql.ENUM('internal', 'external', 'synthetic', 'augmented', 'public', 's3', 'gcs', 'azure_blob', 'database', 'api', 'streaming', name='dataset_source', create_type=False)
 
-    model_status = postgresql.ENUM('draft', 'training', 'evaluating', 'staged', 'production', 'archived', 'deprecated', 'failed', name='model_status')
-    model_status.create(cast(op.get_bind(), Connection))
-
-    deployment_environment = postgresql.ENUM('development', 'staging', 'production', 'canary', 'shadow', 'experiment', name='deployment_environment')
-    deployment_environment.create(cast(op.get_bind(), Connection))
-
-    prediction_status_enum = postgresql.ENUM('pending', 'processing', 'completed', 'failed', 'timeout', name='prediction_status')
-    prediction_status_enum.create(cast(op.get_bind(), Connection))
-
-    algorithm_type = postgresql.ENUM('logistic_regression', 'random_forest', 'xgboost', 'lightgbm', 'catboost', 'neural_network', 'deep_neural_network', 'convolutional_nn', 'recurrent_nn', 'transformer', 'support_vector_machine', 'decision_tree', 'gradient_boosting', 'k_means', 'dbscan', 'pca', 'autoencoder', 'voting', 'stacking', 'bagging', 'custom', 'hybrid', name='algorithm_type')
-    algorithm_type.create(cast(op.get_bind(), Connection))
-
-    framework_type = postgresql.ENUM('scikit_learn', 'tensorflow', 'pytorch', 'xgboost', 'lightgbm', 'catboost', 'huggingface', 'spark_ml', 'custom', name='framework_type')
-    framework_type.create(cast(op.get_bind(), Connection))
-
-    dataset_source = postgresql.ENUM('internal', 'external', 'synthetic', 'augmented', 'public', 's3', 'gcs', 'azure_blob', 'database', 'api', 'streaming', name='dataset_source')
-    dataset_source.create(cast(op.get_bind(), Connection))
+    # Create all enum types
+    for enum_type in [
+        user_status, role_type, permission_action, session_status, token_type, authentication_provider,
+        transaction_status_value, risk_level_value, transaction_channel, source_system, currency_code,
+        payment_method_type, transaction_type_value,
+        alert_severity, alert_status, case_priority, case_status, detection_method, prediction_label,
+        risk_decision, timeline_action_type, comment_visibility, attachment_type, explanation_method,
+        training_status, model_status, deployment_environment, prediction_status_enum, algorithm_type,
+        framework_type, dataset_source
+    ]:
+        enum_type.create(op.get_bind(), checkfirst=True)
 
     print("✓ Created 31 ENUM types")
 

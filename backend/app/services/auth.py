@@ -269,7 +269,7 @@ class AuthenticationService:
 
         print("  STEP: role lookup")
         # Get viewer role as default
-        role = await self.role_repo.get_by_role_type("viewer")
+        role = await self.role_repo.get_by_name("viewer")
         role_id = str(role.id) if role else None
         print(f"  ROLE FOUND: {role.name if role else 'None'}")
 
