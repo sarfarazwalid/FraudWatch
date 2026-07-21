@@ -4,7 +4,7 @@ Refresh token service.
 Handles refresh token creation, validation, and rotation.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import uuid
 
@@ -47,7 +47,7 @@ class RefreshTokenService:
         token_string = JWTService.create_refresh_token(user_id, family_id)
 
         # Calculate expiration (7 days from now)
-        expires_at = datetime.utcnow() + timedelta(days=7)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
 
         # Create token record
         token = RefreshToken(
@@ -96,7 +96,7 @@ class RefreshTokenService:
             return None
 
         # Check expiration
-        if token.expires_at < datetime.utcnow():
+        if token.expires_at < datetime.now(timezone.utc):
             logger.warning(f"Refresh token expired for user {user_id}")
             # Clean up expired token
             await self.refresh_token_repo.session.delete(token)
@@ -126,7 +126,7 @@ class RefreshTokenService:
         token_string = JWTService.create_refresh_token(str(old_token.user_id), family_id)
 
         # Calculate expiration (7 days from now)
-        expires_at = datetime.utcnow() + timedelta(days=7)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
 
         # Create new token record
         new_token = RefreshToken(

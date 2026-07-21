@@ -63,6 +63,7 @@ class Permission(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, V
         secondary="role_permissions",
         back_populates="permissions",
         lazy="selectin",
+        overlaps="role_permissions",
     )
 
     def __repr__(self) -> str:
