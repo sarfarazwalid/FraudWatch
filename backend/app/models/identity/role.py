@@ -21,6 +21,7 @@ from app.models.mixins import (
     VersionMixin,
 )
 from app.models.enums import RoleType
+from sqlalchemy import Enum as SAEnum
 
 if TYPE_CHECKING:
     from app.models.identity.permission import Permission
@@ -48,7 +49,9 @@ class Role(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, Version
         nullable=False,
     )
 
-    role_type: Mapped[RoleType] = mapped_column()
+    role_type: Mapped[RoleType] = mapped_column(
+        SAEnum(RoleType, name='role_type', create_type=False, values_callable=lambda x: [e.value for e in x]),
+    )
 
     is_system_role: Mapped[bool] = mapped_column(
         Boolean,

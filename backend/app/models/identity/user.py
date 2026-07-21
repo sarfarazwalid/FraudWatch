@@ -22,6 +22,7 @@ from app.models.mixins import (
     VersionMixin,
 )
 from app.models.enums import UserStatus
+from sqlalchemy import Enum as SAEnum
 
 if TYPE_CHECKING:
     from app.models.identity.role import Role
@@ -70,6 +71,7 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, Version
     )
 
     status: Mapped[UserStatus] = mapped_column(
+        SAEnum(UserStatus, name='user_status', create_type=False, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=UserStatus.PENDING_VERIFICATION,
     )

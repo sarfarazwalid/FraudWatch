@@ -17,6 +17,7 @@ from app.services.jwt import JWTService
 from app.services.refresh_token import RefreshTokenService
 from app.services.session import SessionService
 from app.schemas.auth import TokenResponse, UserResponse
+from app.config.settings import settings
 
 
 class AuthenticationService:
@@ -160,6 +161,7 @@ class AuthenticationService:
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token_string,
+            expires_in=settings.jwt_access_token_expire_minutes * 60,
             user=UserResponse(
                 id=str(user.id),
                 email=user.email,
@@ -212,6 +214,7 @@ class AuthenticationService:
         return TokenResponse(
             access_token=access_token,
             refresh_token=new_refresh_token_string,
+            expires_in=settings.jwt_access_token_expire_minutes * 60,
             user=UserResponse(
                 id=str(user.id),
                 email=user.email,

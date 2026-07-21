@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID as PyUUID
 
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -21,6 +21,7 @@ from app.models.mixins import (
     VersionMixin,
 )
 from app.models.enums import SessionStatus
+from sqlalchemy import Enum as SAEnum
 
 if TYPE_CHECKING:
     from app.models.identity.user import User
@@ -31,89 +32,61 @@ class UserSession(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, 
     User session model for tracking active sessions.
     """
     __tablename__ = "user_sessions"
-    
+
     user_id: Mapped[PyUUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", name="fk_user_sessions_user_id"),
         nullable=False,
         index=True,
     )
-    
-    session_token: Mapped[str] = mapped_column(
+
+    token_jti: Mapped[str] = mapped_column(
         String(255),
         unique=True,
         nullable=False,
         index=True,
     )
-    
+
     status: Mapped[SessionStatus] = mapped_column(
+        SAEnum(SessionStatus, name='session_status', create_type=False, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=SessionStatus.ACTIVE,
         index=True,
     )
-    
-    device_type: Mapped[Optional[str]] = mapped_column(
-        String(50),
-        nullable=True,
-    )
-    
-    device_name: Mapped[Optional[str]] = mapped_column(
-        String(100),
-        nullable=True,
-    )
-    
-    browser: Mapped[Optional[str]] = mapped_column(
-        String(100),
-        nullable=True,
-    )
-    
-    os: Mapped[Optional[str]] = mapped_column(
-        String(100),
-        nullable=True,
-    )
-    
+
     ip_address: Mapped[Optional[str]] = mapped_column(
         String(45),
         nullable=True,
     )
-    
-    country: Mapped[Optional[str]] = mapped_column(
-        String(2),
-        nullable=True,
-    )
-    
-    city: Mapped[Optional[str]] = mapped_column(
-        String(100),
-        nullable=True,
-    )
-    
-    expires_at: Mapped[datetime] = mapped_column(
-        nullable=False,
-        index=True,
-    )
-    
-    revoked_at: Mapped[Optional[datetime]] = mapped_column(
-        nullable=True,
-    )
-    
+
     user_agent: Mapped[Optional[str]] = mapped_column(
         String(500),
         nullable=True,
     )
-    
+
+    expires_at: Mapped[datetime] = mapped_column(
+        nullable=False,
+        index=True,
+    )
+
+    last_activity: Mapped[datetime] = mapped_column(
+        nullable=False,
+        server_default=func.now(),
+    )
+
     user: Mapped[User] = relationship(
         "User",
         back_populates="sessions",
     )
-    
+
     def __repr__(self) -> str:
-        return f"<UserSession {self.session_token[:8]}...>"
-    
+        return f"<UserSession {self.token_jti[:8]}...>"
+
     @property
     def is_expired(self) -> bool:
         """Check if session has expired."""
         return datetime.now(timezone.utc) > self.expires_at
-    
+
     @property
     def is_active(self) -> bool:
         """Check if session is active."""
