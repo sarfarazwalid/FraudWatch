@@ -77,6 +77,7 @@ class Role(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, Version
         secondary="role_permissions",
         back_populates="roles",
         lazy="selectin",
+        overlaps="role_permissions",
     )
 
     def __repr__(self) -> str:

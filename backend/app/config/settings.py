@@ -7,6 +7,7 @@ All settings are validated at startup to ensure required values are present.
 
 from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from urllib.parse import quote
 
 
 class Settings(BaseSettings):
@@ -24,16 +25,22 @@ class Settings(BaseSettings):
     log_level: str = "info"
 
     # Database
-    database_url: str = "postgresql+asyncpg://fraudwatch:fraudwatch_password@localhost:5432/fraudwatch_db"
-    database_sync_url: str = "postgresql://fraudwatch:fraudwatch_password@localhost:5432/fraudwatch_db"
+    database_host: str = "localhost"
+    database_port: int = 5432
+    database_name: str = "fraudwatch_db"
+    database_user: str = "fraudwatch"
+    database_password: str = "fraudwatch_password"
     database_echo: bool = False
 
     # Redis
-    redis_url: str = "redis://localhost:6379/0"
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    redis_password: Optional[str] = None
 
     # Celery
-    celery_broker_url: str = "redis://localhost:6379/1"
-    celery_result_backend: str = "redis://localhost:6379/2"
+    celery_broker_db: int = 1
+    celery_result_backend_db: int = 2
 
     # JWT
     jwt_secret_key: str = "change-me-in-production-use-openssl-rand-base64-32"
@@ -72,6 +79,37 @@ class Settings(BaseSettings):
     # Pagination
     default_page_size: int = 20
     max_page_size: int = 100
+
+    @property
+    def database_url(self) -> str:
+        """Construct async database URL from components."""
+        return f"postgresql+asyncpg://{self.database_user}:{quote(self.database_password)}@{self.database_host}:{self.database_port}/{self.database_name}"
+
+    @property
+    def database_sync_url(self) -> str:
+        """Construct sync database URL from components."""
+        return f"postgresql://{self.database_user}:{quote(self.database_password)}@{self.database_host}:{self.database_port}/{self.database_name}"
+
+    @property
+    def redis_url(self) -> str:
+        """Construct Redis URL from components."""
+        if self.redis_password:
+            return f"redis://:{quote(self.redis_password)}@{self.redis_host}:{self.redis_port}/{self.redis_db}"
+        return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
+
+    @property
+    def celery_broker_url(self) -> str:
+        """Construct Celery broker URL from components."""
+        if self.redis_password:
+            return f"redis://:{quote(self.redis_password)}@{self.redis_host}:{self.redis_port}/{self.celery_broker_db}"
+        return f"redis://{self.redis_host}:{self.redis_port}/{self.celery_broker_db}"
+
+    @property
+    def celery_result_backend(self) -> str:
+        """Construct Celery result backend URL from components."""
+        if self.redis_password:
+            return f"redis://:{quote(self.redis_password)}@{self.redis_host}:{self.redis_port}/{self.celery_result_backend_db}"
+        return f"redis://{self.redis_host}:{self.redis_port}/{self.celery_result_backend_db}"
 
 
 # Global settings instance

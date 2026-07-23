@@ -6,6 +6,7 @@ Handles JWT token creation, validation, and decoding.
 
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from uuid import uuid4
 from jose import JWTError, jwt
 import logging
 from app.config.settings import settings
@@ -90,6 +91,7 @@ class JWTService:
             "sub": user_id,
             "type": TokenType.REFRESH.value,
             "family_id": family_id,
+            "jti": str(uuid4()),
             "exp": expire,
             "iat": datetime.now(timezone.utc),
         }

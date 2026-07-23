@@ -1,14 +1,3 @@
-"""
-Fix refresh_tokens.expires_at timezone handling.
-
-Changes the expires_at column from TIMESTAMP WITHOUT TIME ZONE
-to TIMESTAMP WITH TIME ZONE to match the SQLAlchemy model definition
-and ensure consistent timezone-aware datetime handling.
-
-Revision ID: 004_fix_refresh_token_timezone
-Revises: 003_fix_user_columns
-Create Date: 2026-07-22
-"""
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa

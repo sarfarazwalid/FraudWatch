@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID as PyUUID
 
-from sqlalchemy import String, ForeignKey, Boolean, Integer
+from sqlalchemy import String, ForeignKey, Boolean, Integer, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -59,6 +59,7 @@ class RefreshToken(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin,
     )
 
     expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         index=True,
     )

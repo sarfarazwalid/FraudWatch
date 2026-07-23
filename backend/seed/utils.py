@@ -192,8 +192,8 @@ def random_amount(min_val: float = 10, max_val: float = 50000, distribution: str
 
 def random_timestamp(start_days_ago: int = 90) -> datetime:
     """Generate a random timestamp within the last N days."""
-    start = datetime.utcnow() - timedelta(days=start_days_ago)
-    end = datetime.utcnow()
+    start = datetime.now(timezone.utc) - timedelta(days=start_days_ago)
+    end = datetime.now(timezone.utc)
     return start + timedelta(seconds=random.randint(0, int((end - start).total_seconds())))
 
 

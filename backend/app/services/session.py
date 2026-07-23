@@ -4,7 +4,7 @@ Session service.
 Handles user session management and validation.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -52,7 +52,7 @@ class SessionService:
         if expires_in is None:
             expires_in = timedelta(hours=24)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expires_at = now + expires_in
 
         session = UserSession(
@@ -90,7 +90,7 @@ class SessionService:
             return None
 
         # Check if expired
-        if session.expires_at < datetime.utcnow():
+        if session.expires_at < datetime.now(timezone.utc):
             session.status = SessionStatus.EXPIRED
             await self.session_repo.session.flush()
             return None

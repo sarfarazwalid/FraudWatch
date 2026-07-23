@@ -1,10 +1,3 @@
-"""
-FraudWatch API Application Factory
-
-This module creates and configures the FastAPI application instance.
-Follows the application factory pattern for better testability and configuration.
-"""
-
 import sys
 from pathlib import Path
 
@@ -133,10 +126,12 @@ def create_application() -> FastAPI:
     from app.api.v1.fraud_cases import router as fraud_cases_router
     from app.api.v1.fraud_rules import router as fraud_rules_router
     from app.api.v1.model_registry import router as model_registry_router
+    from app.api.v1.dashboard import router as dashboard_router
 
     api_prefix = settings.api_v1_prefix
 
     application.include_router(auth_router, prefix=f"{api_prefix}/auth", tags=["Authentication"])
+    application.include_router(dashboard_router, prefix=f"{api_prefix}", tags=["Dashboard"])
     application.include_router(users_router, prefix=f"{api_prefix}/users", tags=["Users"])
     application.include_router(roles_router, prefix=f"{api_prefix}/roles", tags=["Roles"])
     application.include_router(permissions_router, prefix=f"{api_prefix}/permissions", tags=["Permissions"])

@@ -71,41 +71,70 @@ target_metadata = Base.metadata
 def get_database_url() -> str:
     """
     Get database URL from environment or settings.
-    
+
     Supports environment-aware configuration:
     - DEVELOPMENT: Local PostgreSQL
     - TESTING: PostgreSQL test database
     - PRODUCTION: Production PostgreSQL
+
+    Returns:
+        Database URL string (sync driver for Alembic)
+
+    Raises:
+        ValueError: If database configuration is missing or invalid
     """
     environment = os.getenv("ENVIRONMENT", "development")
-    
-    # Try to import settings
+
+    # Try to import settings (preferred method)
     try:
         from app.config.settings import settings
+
+        # Validate required database settings
+        if not settings.database_host:
+            raise ValueError(
+                "DATABASE_HOST is not configured. "
+                "Set DATABASE_HOST=localhost for local development or DATABASE_HOST=postgres for Docker."
+            )
+
+        if not settings.database_name:
+            raise ValueError("DATABASE_NAME is not configured.")
+
+        if not settings.database_user:
+            raise ValueError("DATABASE_USER is not configured.")
+
+        # Print connection info (without password)
+        print(f"[Alembic] Environment: {environment}")
+        print(f"[Alembic] Database: {settings.database_user}@{settings.database_host}:{settings.database_port}/{settings.database_name}")
+
         return settings.database_sync_url
-    except ImportError:
-        pass
-    
+
+    except ImportError as e:
+        print(f"[Alembic] Warning: Could not import settings: {e}")
+
     # Fallback to environment variables
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        return database_url
-    
-    # Default for development
-    if environment == "development":
-        return "postgresql://fraudwatch:fraudwatch@localhost:5432/fraudwatch_dev"
-    elif environment == "testing":
-        return "postgresql://fraudwatch:fraudwatch@localhost:5432/fraudwatch_test"
-    elif environment == "production":
-        return os.getenv("DATABASE_URL_PROD", "")
-    
-    raise ValueError(f"No database URL configured for environment: {environment}")
+    database_host = os.getenv("DATABASE_HOST")
+    database_port = os.getenv("DATABASE_PORT", "5432")
+    database_name = os.getenv("DATABASE_NAME")
+    database_user = os.getenv("DATABASE_USER")
+    database_password = os.getenv("DATABASE_PASSWORD")
+
+    if not all([database_host, database_name, database_user, database_password]):
+        raise ValueError(
+            "Database configuration incomplete. "
+            "Required: DATABASE_HOST, DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD. "
+            "For Docker: DATABASE_HOST=postgres, for local: DATABASE_HOST=localhost"
+        )
+
+    print(f"[Alembic] Environment: {environment}")
+    print(f"[Alembic] Database: {database_user}@{database_host}:{database_port}/{database_name}")
+
+    return f"postgresql://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}"
 
 
 def run_migrations_offline() -> None:
     """
     Run migrations in 'offline' mode.
-    
+
     This configures the context with just a URL and not an Engine.
     """
     url = get_database_url()
@@ -128,7 +157,7 @@ def run_migrations_offline() -> None:
 def do_run_migrations(connection: Any) -> None:
     """
     Run migrations with connection.
-    
+
     Args:
         connection: Database connection
     """
@@ -151,7 +180,7 @@ def do_run_migrations(connection: Any) -> None:
 def process_revision_directives(context: Any, revision: Any, directives: Any) -> None:
     """
     Custom revision directive processor.
-    
+
     Can be used to customize migration generation.
     """
     # Auto-generate migration if there are changes
@@ -165,27 +194,36 @@ def process_revision_directives(context: Any, revision: Any, directives: Any) ->
 def run_migrations_online() -> None:
     """
     Run migrations in 'online' mode.
-    
+
     Creates an Engine and associates a connection with the context.
     """
     database_url = get_database_url()
-    
-    # Check if using async driver
+
+    # Check if using async driver and convert to sync
     if database_url.startswith("postgresql+asyncpg://"):
         # Convert to sync URL for Alembic
         sync_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
         config.set_main_option("sqlalchemy.url", sync_url)
-    
+    else:
+        config.set_main_option("sqlalchemy.url", database_url)
+
+    print(f"[Alembic] Running migrations...")
+
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
-    with connectable.connect() as connection:
-        do_run_migrations(connection)
-    
-    connectable.dispose()
+    try:
+        with connectable.connect() as connection:
+            do_run_migrations(connection)
+        print(f"[Alembic] Migrations completed successfully")
+    except Exception as e:
+        print(f"[Alembic] ERROR: Migration failed: {e}")
+        raise
+    finally:
+        connectable.dispose()
 
 
 if context.is_offline_mode():

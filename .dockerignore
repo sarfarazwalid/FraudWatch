@@ -38,6 +38,5 @@ backend/docs/
 backend/seed/
 backend/tests/
 backend/scripts/
-backend/alembic/
 docs/
 frontend/public/

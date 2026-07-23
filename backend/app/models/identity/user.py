@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import String, Boolean, Integer, Text, ForeignKey
+from sqlalchemy import String, Boolean, Integer, Text, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
@@ -83,6 +83,7 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, Version
     )
 
     last_login: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
         nullable=True,
     )
 
@@ -93,6 +94,7 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, Version
     )
 
     locked_until: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
         nullable=True,
     )
 

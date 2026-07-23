@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID as PyUUID
 
-from sqlalchemy import String, ForeignKey, func
+from sqlalchemy import String, ForeignKey, func, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -65,11 +65,13 @@ class UserSession(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, 
     )
 
     expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         index=True,
     )
 
     last_activity: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
