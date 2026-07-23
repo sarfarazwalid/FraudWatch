@@ -27,6 +27,11 @@ if TYPE_CHECKING:
     from app.models.identity.user import User
 
 
+def _get_session_status_values(enum_class: type[SessionStatus]) -> list[str]:
+    """Return list of enum values for SQLAlchemy Enum definition."""
+    return [e.value for e in enum_class]
+
+
 class UserSession(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
     """
     User session model for tracking active sessions.
@@ -48,7 +53,7 @@ class UserSession(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, 
     )
 
     status: Mapped[SessionStatus] = mapped_column(
-        SAEnum(SessionStatus, name='session_status', create_type=False, values_callable=lambda x: [e.value for e in x]),
+        SAEnum(SessionStatus, name='session_status', create_type=False, values_callable=_get_session_status_values),
         nullable=False,
         default=SessionStatus.ACTIVE,
         index=True,

@@ -30,6 +30,11 @@ if TYPE_CHECKING:
     from app.models.identity.refresh_token import RefreshToken
 
 
+def _get_user_status_values(enum_class: type[UserStatus]) -> list[str]:
+    """Return list of enum values for SQLAlchemy Enum definition."""
+    return [e.value for e in enum_class]
+
+
 class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
     """
     User model for platform users.
@@ -71,7 +76,7 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, Version
     )
 
     status: Mapped[UserStatus] = mapped_column(
-        SAEnum(UserStatus, name='user_status', create_type=False, values_callable=lambda x: [e.value for e in x]),
+        SAEnum(UserStatus, name='user_status', create_type=False, values_callable=_get_user_status_values),
         nullable=False,
         default=UserStatus.PENDING_VERIFICATION,
     )

@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from uuid import UUID
 
 from app.models.transaction.transaction import Transaction
@@ -100,6 +100,50 @@ class TransactionService:
 
         return True
 
+    async def get_transactions(
+        self,
+        page: int = 1,
+        page_size: int = 50,
+        search: Optional[str] = None,
+        merchant_id: Optional[str] = None,
+        status_id: Optional[str] = None,
+        risk_level_id: Optional[str] = None,
+        payment_method_id: Optional[str] = None,
+        transaction_type_id: Optional[str] = None,
+        device_id: Optional[str] = None,
+        location_id: Optional[str] = None,
+        amount_min: Optional[float] = None,
+        amount_max: Optional[float] = None,
+        date_from: Optional[datetime] = None,
+        date_to: Optional[datetime] = None,
+        sort_by: str = "transaction_timestamp",
+        sort_order: str = "desc",
+    ) -> Tuple[List[Transaction], int]:
+        """
+        Get paginated, filtered, and sorted transactions.
+
+        Returns:
+            Tuple of (items, total_count)
+        """
+        return await self.transaction_repo.list_transactions(
+            page=page,
+            page_size=page_size,
+            search=search,
+            merchant_id=merchant_id,
+            status_id=status_id,
+            risk_level_id=risk_level_id,
+            payment_method_id=payment_method_id,
+            transaction_type_id=transaction_type_id,
+            device_id=device_id,
+            location_id=location_id,
+            amount_min=amount_min,
+            amount_max=amount_max,
+            date_from=date_from,
+            date_to=date_to,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
+
     async def list_transactions(
         self,
         page: int = 1,
@@ -118,8 +162,11 @@ class TransactionService:
         date_to: Optional[datetime] = None,
         sort_by: str = "transaction_timestamp",
         sort_order: str = "desc",
-    ):
-        return await self.transaction_repo.list_transactions(
+    ) -> Tuple[List[Transaction], int]:
+        """
+        Alias for get_transactions to maintain backward compatibility.
+        """
+        return await self.get_transactions(
             page=page,
             page_size=page_size,
             search=search,

@@ -21,31 +21,12 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 # Import all models FIRST to ensure they're registered with SQLAlchemy
-# before any database connections are established
-from app.models import (
-    User,
-    Role,
-    Permission,
-    RolePermission,
-    UserSession,
-    RefreshToken,
-)
+# before any database connections are etablished
+from app.models import (User,Role,Permission,RolePermission,UserSession,RefreshToken,)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Application lifespan events.
-
-    Startup:
-        - Initialize database connections
-        - Load ML models
-        - Start background workers
-
-    Shutdown:
-        - Close database connections
-        - Cleanup resources
-    """
     logger.info(f"Starting {settings.project_name} v{settings.version}")
     logger.info(f"Environment: {settings.environment}")
 
@@ -57,12 +38,6 @@ async def lifespan(app: FastAPI):
 
 
 def create_application() -> FastAPI:
-    """
-    Create and configure the FastAPI application.
-
-    Returns:
-        FastAPI: Configured application instance
-    """
     application = FastAPI(
         title=settings.project_name,
         description=settings.description,

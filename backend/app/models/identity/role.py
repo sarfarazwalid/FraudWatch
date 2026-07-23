@@ -29,6 +29,11 @@ if TYPE_CHECKING:
     from app.models.identity.user import User
 
 
+def _get_role_type_values(enum_class: type[RoleType]) -> list[str]:
+    """Return list of enum values for SQLAlchemy Enum definition."""
+    return [e.value for e in enum_class]
+
+
 class Role(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, VersionMixin):
     """
     Role model for access control.
@@ -50,7 +55,7 @@ class Role(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, Version
     )
 
     role_type: Mapped[RoleType] = mapped_column(
-        SAEnum(RoleType, name='role_type', create_type=False, values_callable=lambda x: [e.value for e in x]),
+        SAEnum(RoleType, name='role_type', create_type=False, values_callable=_get_role_type_values),
     )
 
     is_system_role: Mapped[bool] = mapped_column(

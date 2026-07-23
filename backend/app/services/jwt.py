@@ -5,7 +5,7 @@ Handles JWT token creation, validation, and decoding.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Optional
 from uuid import uuid4
 from jose import JWTError, jwt
 import logging
@@ -27,7 +27,7 @@ class JWTService:
         user_id: str,
         role: str,
         expires_delta: Optional[timedelta] = None,
-        additional_claims: Optional[dict] = None
+        additional_claims: Optional[dict[str, Any]] = None
     ) -> str:
         """
         Create a JWT access token.
@@ -46,7 +46,7 @@ class JWTService:
 
         expire = datetime.now(timezone.utc) + expires_delta
 
-        to_encode = {
+        to_encode: dict[str, Any] = {
             "sub": user_id,
             "role": role,
             "type": TokenType.ACCESS.value,
@@ -87,7 +87,7 @@ class JWTService:
 
         expire = datetime.now(timezone.utc) + expires_delta
 
-        to_encode = {
+        to_encode: dict[str, Any] = {
             "sub": user_id,
             "type": TokenType.REFRESH.value,
             "family_id": family_id,
@@ -105,7 +105,7 @@ class JWTService:
         return encoded_jwt
 
     @staticmethod
-    def decode_token(token: str) -> Optional[dict]:
+    def decode_token(token: str) -> Optional[dict[str, Any]]:
         """
         Decode and validate a JWT token.
 
@@ -127,22 +127,22 @@ class JWTService:
             return None
 
     @staticmethod
-    def is_access_token(payload: dict) -> bool:
+    def is_access_token(payload: dict[str, Any]) -> bool:
         """Check if token is an access token."""
         return payload.get("type") == TokenType.ACCESS.value
 
     @staticmethod
-    def is_refresh_token(payload: dict) -> bool:
+    def is_refresh_token(payload: dict[str, Any]) -> bool:
         """Check if token is a refresh token."""
         return payload.get("type") == TokenType.REFRESH.value
 
     @staticmethod
-    def get_user_id(payload: dict) -> Optional[str]:
+    def get_user_id(payload: dict[str, Any]) -> Optional[str]:
         """Extract user ID from token payload."""
         return payload.get("sub")
 
     @staticmethod
-    def is_expired(payload: dict) -> bool:
+    def is_expired(payload: dict[str, Any]) -> bool:
         """Check if token is expired."""
         exp = payload.get("exp")
         if exp is None:
