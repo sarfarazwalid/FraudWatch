@@ -241,7 +241,7 @@ class DeploymentManager:
         )
 
         with self.session_factory() as session:
-            # Get current production model
+
             current_prod = (
                 session.query(ModelVersion)
                 .filter(
@@ -408,7 +408,7 @@ class DeploymentManager:
             if model_version is None:
                 return None
 
-            # Get metrics
+
             metrics = (
                 session.query(ModelMetrics)
                 .filter(ModelMetrics.model_version_id == model_version.id)

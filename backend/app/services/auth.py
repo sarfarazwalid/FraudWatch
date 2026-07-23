@@ -114,7 +114,7 @@ class AuthenticationService:
         Returns:
             TokenResponse if authentication successful, None otherwise
         """
-        # Get user by email
+
         user = await self.user_repo.get_by_email(email)
         if not user:
             return None
@@ -193,7 +193,7 @@ class AuthenticationService:
         if not refresh_token:
             return None
 
-        # Get user
+
         user = await self.user_repo.get(str(refresh_token.user_id))
         if not user:
             return None
@@ -271,7 +271,7 @@ class AuthenticationService:
         password_hash = PasswordService.hash(password)
 
         print("  STEP: role lookup")
-        # Get viewer role as default
+
         role = await self.role_repo.get_by_name("viewer")
         role_id = str(role.id) if role else None
         print(f"  ROLE FOUND: {role.name if role else 'None'}")

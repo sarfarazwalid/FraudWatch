@@ -153,7 +153,7 @@ async def list_users(
         # Search
         search_term = search if search else None
 
-        # Get users with pagination
+
         users, total = await user_service.list_users(
             page=page,
             page_size=page_size,
@@ -213,7 +213,7 @@ async def get_current_user_profile(
                 detail="User not found",
             )
 
-        # Get permissions
+
         permissions = []
         if user.role and user.role.permissions:
             permissions = [perm.name for perm in user.role.permissions]
@@ -363,7 +363,7 @@ async def get_user(
                 detail="User not found",
             )
 
-        # Get permissions
+
         permissions = []
         if user.role and hasattr(user.role, 'permissions') and user.role.permissions:
             permissions = [perm.name for perm in user.role.permissions]

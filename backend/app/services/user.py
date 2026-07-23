@@ -62,7 +62,7 @@ class UserService:
         # Hash password
         password_hash = PasswordService.hash(password)
 
-        # Get default role if not provided
+
         if not role_id:
             role = await self.role_repo.get_by_role_type("viewer")
             if role:
@@ -219,17 +219,17 @@ class UserService:
                 skip=skip,
                 limit=page_size,
             )
-            # Get total count (simplified - in production you'd want to count separately)
+
             total = len(users)  # This is approximate
         else:
-            # Get paginated users using correct parameter name
+
             users = await self.user_repo.get_all(
                 skip=skip,
                 limit=page_size,
                 filters=repo_filters if repo_filters else None,
                 order_by=sort_by if sort_order == "asc" else f"-{sort_by}",
             )
-            # Get total count
+
             total = await self.user_repo.count(filters=repo_filters if repo_filters else None)
             total = await self.user_repo.count(filters=repo_filters if repo_filters else None)
 

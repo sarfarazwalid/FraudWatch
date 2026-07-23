@@ -72,7 +72,7 @@ class FraudCaseService:
 
         case.status = status
 
-        # Set closed_at if case is being closed
+
         if status in [CaseStatus.RESOLVED, CaseStatus.CLOSED]:
             case.closed_at = datetime.now()
 

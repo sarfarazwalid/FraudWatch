@@ -59,12 +59,12 @@ async def get_current_user(
     if not JWTService.is_access_token(payload):
         raise credentials_exception
 
-    # Get user ID
+
     user_id = JWTService.get_user_id(payload)
     if not user_id:
         raise credentials_exception
 
-    # Get user from database
+
     user_repo = UserRepository(db_session)
     user = await user_repo.get(user_id)
 

@@ -105,7 +105,7 @@ class DatasetBuilder:
     ) -> DatasetVersion:
         logger.info("Building dataset from production data")
 
-        # Set default date range (last 90 days)
+
         if end_date is None:
             end_date = datetime.utcnow()
         if start_date is None:
@@ -228,7 +228,7 @@ class DatasetBuilder:
             DataFrame with is_fraud label column
         """
         with self.session_factory() as session:
-            # Get confirmed fraud transactions
+
             fraud_transaction_ids = set()
 
             # From fraud alerts

@@ -184,7 +184,7 @@ class TrainerEngine:
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.random_seed = random_seed
 
-        # Set seeds for reproducibility
+
         np.random.seed(random_seed)
 
     # -----------------------------------------------------------------------

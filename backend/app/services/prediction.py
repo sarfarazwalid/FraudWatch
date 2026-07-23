@@ -106,7 +106,7 @@ class PredictionService:
         # Step 7: Generate prediction record
         prediction = Prediction(
             transaction_id=transaction_id,
-            model_version_id="v1.0.0",  # Get from model registry
+            model_version_id="v1.0.0",
             predicted_label=predicted_label,
             confidence_score=final_score,
             probability_score=ml_score,
@@ -159,7 +159,7 @@ class PredictionService:
             feature_types = self.feature_extractor.get_feature_types()
             X = np.array([[features.get(f, 0.0) for f in feature_names]])
 
-            # Get probability
+
             proba = self.ml_model.predict_proba(X)
             return float(proba[0][1])  # Probability of fraud class
         except Exception as e:

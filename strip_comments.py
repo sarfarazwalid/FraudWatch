@@ -270,8 +270,12 @@ def main():
                 if not fname.endswith(ALL_EXT):
                     continue
                 filepath = Path(root) / fname
-                if modified := process_file(filepath):
-                    print(f"  Modified: {filepath.relative_to(Path.cwd())}")
+                if process_file(filepath):
+                    try:
+                        rel_path = filepath.relative_to(Path.cwd())
+                    except ValueError:
+                        rel_path = filepath
+                    print(f"  Modified: {rel_path}")
                     total_modified += 1
                 total_files += 1
 

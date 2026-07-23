@@ -149,7 +149,7 @@ def predict_transaction_task(self: Task, transaction_id: UUID) -> dict[str, Any]
 
     db_session = None
     try:
-        # Get database session
+
         db_session = get_db_session()
 
         # Initialize prediction service
