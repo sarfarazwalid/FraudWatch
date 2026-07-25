@@ -1,20 +1,3 @@
-"""
-Fix all remaining column mismatches between ORM models and database.
-
-This migration addresses all remaining schema issues after migration 008:
-1. fraud_cases: Add investigator_id, escalation_level, opened_at, closed_at
-2. fraud_cases: Change status column from case_status enum to casestatus enum
-3. fraud_alerts: Rename rule_id -> triggered_rule_id
-4. fraud_alerts: Rename assigned_to -> assigned_analyst_id
-5. fraud_alerts: Rename alert_score -> risk_score
-6. fraud_alerts: Rename resolution_notes -> resolution_summary
-7. fraud_alerts: Add detection_method, generated_at, acknowledged_at, false_positive columns
-
-Revision ID: 009_fix_all_remaining_column_mismatches
-Revises: 008_fix_remaining_schema_issues
-Create Date: 2026-07-25
-"""
-
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
@@ -34,12 +17,8 @@ def upgrade() -> None:
     conn = op.get_bind()
     inspector = sa.inspect(conn)
 
-    # ========================================
-    # Fix fraud_cases table
-    # ========================================
     existing_cases_columns = [col['name'] for col in inspector.get_columns('fraud_cases')]
 
-    # Add missing columns
     if 'investigator_id' not in existing_cases_columns:
         op.add_column('fraud_cases', sa.Column('investigator_id', postgresql.UUID(as_uuid=True), nullable=True))
         op.create_index('ix_fraud_cases_investigator_id', 'fraud_cases', ['investigator_id'])
@@ -59,11 +38,6 @@ def upgrade() -> None:
         op.add_column('fraud_cases', sa.Column('closed_at', sa.DateTime(timezone=True), nullable=True))
         print("✓ Added closed_at column to fraud_cases")
 
-    # Fix status column: change from case_status enum to casestatus enum
-    # The ORM uses CaseStatus enum which maps to "casestatus" type in PostgreSQL
-    # The database currently has "case_status" type for the status column
-    # We need to alter the column type to use the "casestatus" enum
-    # First check if the casestatus enum exists (created in migration 008)
     try:
         conn.execute(sa.text("SELECT 1 FROM pg_type WHERE typname = 'casestatus'"))
         casestatus_exists = conn.execute(sa.text("SELECT 1 FROM pg_type WHERE typname = 'casestatus'")).scalar()
@@ -71,24 +45,16 @@ def upgrade() -> None:
         casestatus_exists = False
 
     if casestatus_exists:
-        # Alter the status column to use casestatus enum
-        # We need to drop the default first, alter type, then re-add default
         op.execute("ALTER TABLE fraud_cases ALTER COLUMN status DROP DEFAULT")
         op.execute("ALTER TABLE fraud_cases ALTER COLUMN status TYPE casestatus USING status::text::casestatus")
         op.execute("ALTER TABLE fraud_cases ALTER COLUMN status SET DEFAULT 'new'::casestatus")
-        print("✓ Changed fraud_cases.status from case_status to casestatus enum")
 
-    # ========================================
-    # Fix fraud_alerts table
-    # ========================================
     existing_alerts_columns = [col['name'] for col in inspector.get_columns('fraud_alerts')]
 
-    # Rename rule_id -> triggered_rule_id
     if 'rule_id' in existing_alerts_columns and 'triggered_rule_id' not in existing_alerts_columns:
         op.alter_column('fraud_alerts', 'rule_id', new_column_name='triggered_rule_id')
         print("✓ Renamed fraud_alerts.rule_id to triggered_rule_id")
 
-    # Rename assigned_to -> assigned_analyst_id
     if 'assigned_to' in existing_alerts_columns and 'assigned_analyst_id' not in existing_alerts_columns:
         op.alter_column('fraud_alerts', 'assigned_to', new_column_name='assigned_analyst_id')
         print("✓ Renamed fraud_alerts.assigned_to to assigned_analyst_id")
@@ -188,11 +154,7 @@ def downgrade() -> None:
     existing_cases_columns = [col['name'] for col in inspector.get_columns('fraud_cases')]
     existing_alerts_columns = [col['name'] for col in inspector.get_columns('fraud_alerts')]
 
-    # ========================================
-    # Revert fraud_cases changes
-    # ========================================
 
-    # Revert status column type back to case_status
     try:
         conn.execute(sa.text("SELECT 1 FROM pg_type WHERE typname = 'case_status'"))
         case_status_exists = conn.execute(sa.text("SELECT 1 FROM pg_type WHERE typname = 'case_status'")).scalar()
@@ -203,17 +165,14 @@ def downgrade() -> None:
         op.execute("ALTER TABLE fraud_cases ALTER COLUMN status DROP DEFAULT")
         op.execute("ALTER TABLE fraud_cases ALTER COLUMN status TYPE case_status USING status::text::case_status")
         op.execute("ALTER TABLE fraud_cases ALTER COLUMN status SET DEFAULT 'new'::case_status")
-        print("✓ Reverted fraud_cases.status back to case_status enum")
 
     # Drop added columns
     if 'closed_at' in existing_cases_columns:
         op.drop_column('fraud_cases', 'closed_at')
-        print("✓ Dropped closed_at column from fraud_cases")
 
     if 'opened_at' in existing_cases_columns:
         op.drop_index('ix_fraud_cases_opened_at', table_name='fraud_cases')
         op.drop_column('fraud_cases', 'opened_at')
-        print("✓ Dropped opened_at column from fraud_cases")
 
     if 'escalation_level' in existing_cases_columns:
         op.drop_column('fraud_cases', 'escalation_level')
@@ -266,11 +225,6 @@ def downgrade() -> None:
         op.add_column('fraud_cases', sa.Column('actual_loss', sa.Numeric(18, 2), nullable=True))
         print("✓ Re-added actual_loss column to fraud_cases")
 
-    # ========================================
-    # Revert fraud_alerts changes
-    # ========================================
-
-    # Drop added columns
     if 'false_positive' in existing_alerts_columns:
         op.drop_column('fraud_alerts', 'false_positive')
         print("✓ Dropped false_positive column from fraud_alerts")
