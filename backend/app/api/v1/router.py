@@ -11,6 +11,7 @@ from app.api.v1.fraud_alerts import router as fraud_alerts_router
 from app.api.v1.fraud_cases import router as fraud_cases_router
 from app.api.v1.fraud_rules import router as fraud_rules_router
 from app.api.v1.model_registry import router as model_registry_router
+from app.api.v1.predictions import router as predictions_router
 
 router = APIRouter()
 
@@ -26,3 +27,4 @@ router.include_router(fraud_alerts_router, prefix="/fraud/alerts", tags=["Fraud 
 router.include_router(fraud_cases_router, prefix="/fraud/cases", tags=["Fraud Cases"])
 router.include_router(fraud_rules_router, prefix="/fraud/rules", tags=["Fraud Rules"])
 router.include_router(model_registry_router, prefix="/ml/models", tags=["Model Registry"])
+router.include_router(predictions_router, prefix="/predictions", tags=["Predictions"])

@@ -4,13 +4,18 @@ FraudCase service.
 Handles fraud investigation case business logic and workflow management.
 """
 
+import uuid
 from typing import Optional, List, Dict, Any, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, or_, and_
 
 from app.models.fraud.fraud_case import FraudCase
+from app.models.fraud.fraud_alert import FraudAlert
 from app.models.fraud.enums import CaseStatus, CasePriority
 from app.repositories.fraud_case import FraudCaseRepository
-from sqlalchemy import select, or_, and_
+from app.schemas.fraud import PredictionResponse, RuleEvaluationResponse, AlertResponse, CaseResponse
 
 
 class FraudCaseService:
@@ -20,8 +25,9 @@ class FraudCaseService:
     Handles case creation, investigator assignment, and status transitions.
     """
 
-    def __init__(self, fraud_case_repo: FraudCaseRepository):
+    def __init__(self, fraud_case_repo: Optional[FraudCaseRepository] = None, session: Optional[AsyncSession] = None):
         self.fraud_case_repo = fraud_case_repo
+        self.session = session or (fraud_case_repo.session if fraud_case_repo else None)
 
     async def create_case(self, case_data: dict) -> FraudCase:
         """
@@ -38,6 +44,96 @@ class FraudCaseService:
         await self.fraud_case_repo.session.flush()
         await self.fraud_case_repo.session.refresh(case)
         return case
+
+    async def create_from_alert(
+        self,
+        alert: AlertResponse,
+        prediction: PredictionResponse,
+        rule_evaluations: RuleEvaluationResponse,
+        current_user,
+    ) -> CaseResponse:
+        """
+        Create a fraud case from an alert.
+
+        Called automatically when risk_score >= 0.85.
+
+        Args:
+            alert: The alert that triggered case creation
+            prediction: The prediction result
+            rule_evaluations: Rule evaluation results
+            current_user: The user who created the transaction
+
+        Returns:
+            CaseResponse with case details
+        """
+        # Map risk score to severity
+        risk_score = prediction.risk_score
+        if risk_score >= 0.95:
+            severity = "critical"
+        elif risk_score >= 0.9:
+            severity = "high"
+        else:
+            severity = "medium"
+
+        # Map risk score to priority
+        if risk_score >= 0.95:
+            priority = CasePriority.CRITICAL
+        elif risk_score >= 0.9:
+            priority = CasePriority.HIGH
+        else:
+            priority = CasePriority.MEDIUM
+
+        # Collect triggered rule names
+        triggered_rules = [
+            r.rule_name for r in rule_evaluations.rules if r.triggered
+        ]
+
+        # Generate case number
+        case_number = f"CASE-{uuid.uuid4().hex[:8].upper()}"
+
+        # Build description
+        description = (
+            f"Automatically generated case for suspicious transaction. "
+            f"Risk score: {risk_score:.2f}. "
+            f"Prediction: {prediction.prediction}. "
+            f"Confidence: {prediction.confidence:.2f}. "
+            f"Triggered rules: {', '.join(triggered_rules) if triggered_rules else 'None'}. "
+            f"Model: {prediction.model_version}."
+        )
+
+        case = FraudCase(
+            case_number=case_number,
+            alert_id=alert.id,
+            severity=severity,
+            priority=priority,
+            status=CaseStatus.NEW,
+            escalation_level=0,
+            opened_at=datetime.now(timezone.utc),
+            summary=description,
+        )
+        self.session.add(case)
+        await self.session.flush()
+        await self.session.refresh(case)
+
+        # Update alert with case_id
+        alert_obj_result = await self.session.execute(
+            select(FraudAlert).where(FraudAlert.id == alert.id).limit(1)
+        )
+        alert_obj = alert_obj_result.scalar_one_or_none()
+        if alert_obj:
+            alert_obj.case_id = case.id
+            await self.session.flush()
+
+        return CaseResponse(
+            id=str(case.id),
+            case_number=case.case_number,
+            severity=case.severity,
+            status=case.status.value if hasattr(case.status, 'value') else str(case.status),
+            alert_id=str(case.alert_id) if case.alert_id else None,
+            transaction_ids=[alert.transaction_id],
+            risk_score=risk_score,
+            created_at=case.created_at,
+        )
 
     async def get_case(self, case_id: str) -> Optional[FraudCase]:
         """Get fraud case by ID."""

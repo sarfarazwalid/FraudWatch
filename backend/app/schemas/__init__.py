@@ -27,6 +27,17 @@ from app.schemas.role import (
     PermissionCreate,
 )
 from app.schemas.session import SessionResponse
+from app.schemas.fraud import (
+    FraudAnalysisRequest,
+    FraudAnalysisResponse,
+    RuleEvaluationResult,
+    RuleEvaluationResponse,
+    FeatureImportance,
+    PredictionResponse,
+    ExplanationResponse,
+    AlertResponse,
+    CaseResponse,
+)
 
 __all__ = [
     # Auth schemas
@@ -50,4 +61,14 @@ __all__ = [
     "PermissionCreate",
     # Session schemas
     "SessionResponse",
+    # Fraud schemas
+    "FraudAnalysisRequest",
+    "FraudAnalysisResponse",
+    "RuleEvaluationResult",
+    "RuleEvaluationResponse",
+    "FeatureImportance",
+    "PredictionResponse",
+    "ExplanationResponse",
+    "AlertResponse",
+    "CaseResponse",
 ]

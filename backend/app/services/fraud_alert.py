@@ -4,13 +4,18 @@ FraudAlert service.
 Handles fraud alert business logic and escalation workflows.
 """
 
+import uuid
 from typing import Optional, List, Dict, Any, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, or_, and_
 
 from app.models.fraud.fraud_alert import FraudAlert
-from app.models.fraud.enums import AlertStatus, AlertSeverity
+from app.models.fraud.enums import AlertStatus, AlertSeverity, DetectionMethod
+from app.models.transaction.transaction import Transaction
 from app.repositories.fraud_alert import FraudAlertRepository
-from sqlalchemy import select, or_, and_
+from app.schemas.fraud import PredictionResponse, RuleEvaluationResponse, AlertResponse
 
 
 class FraudAlertService:
@@ -20,8 +25,9 @@ class FraudAlertService:
     Handles alert creation, status updates, and escalation to cases.
     """
 
-    def __init__(self, fraud_alert_repo: FraudAlertRepository):
+    def __init__(self, fraud_alert_repo: Optional[FraudAlertRepository] = None, session: Optional[AsyncSession] = None):
         self.fraud_alert_repo = fraud_alert_repo
+        self.session = session or (fraud_alert_repo.session if fraud_alert_repo else None)
 
     async def create_alert(self, alert_data: dict) -> FraudAlert:
         """
@@ -38,6 +44,78 @@ class FraudAlertService:
         await self.fraud_alert_repo.session.flush()
         await self.fraud_alert_repo.session.refresh(alert)
         return alert
+
+    async def create_from_prediction(
+        self,
+        transaction: Transaction,
+        prediction: PredictionResponse,
+        rule_evaluations: RuleEvaluationResponse,
+        current_user,
+    ) -> AlertResponse:
+        """
+        Create a fraud alert from a prediction result.
+
+        Called automatically when risk_score >= 0.7.
+
+        Args:
+            transaction: The transaction that triggered the alert
+            prediction: The prediction result
+            rule_evaluations: Rule evaluation results
+            current_user: The user who created the transaction
+
+        Returns:
+            AlertResponse with alert details
+        """
+        # Map risk score to severity
+        risk_score = prediction.risk_score
+        if risk_score >= 0.9:
+            severity = AlertSeverity.CRITICAL
+        elif risk_score >= 0.8:
+            severity = AlertSeverity.HIGH
+        else:
+            severity = AlertSeverity.MEDIUM
+
+        # Collect triggered rule names
+        triggered_rules = [
+            r.rule_name for r in rule_evaluations.rules if r.triggered
+        ]
+
+        # Generate alert number
+        alert_number = f"ALR-{uuid.uuid4().hex[:8].upper()}"
+
+        alert = FraudAlert(
+            alert_number=alert_number,
+            title="Suspicious transaction detected",
+            description=(
+                f"Transaction {transaction.transaction_reference} flagged with "
+                f"risk score {risk_score:.2f}. "
+                f"Prediction: {prediction.prediction}. "
+                f"Triggered rules: {', '.join(triggered_rules) if triggered_rules else 'None'}. "
+                f"Model: {prediction.model_version}."
+            ),
+            transaction_id=transaction.id,
+            severity=severity,
+            status=AlertStatus.NEW,
+            detection_method=DetectionMethod.HYBRID,
+            risk_score=risk_score * 100,  # Store as 0-100 scale
+            generated_at=datetime.now(timezone.utc),
+            creator_id=current_user.id if hasattr(current_user, 'id') else None,
+        )
+        self.session.add(alert)
+        await self.session.flush()
+        await self.session.refresh(alert)
+
+        return AlertResponse(
+            id=str(alert.id),
+            alert_number=alert.alert_number,
+            title=alert.title,
+            severity=alert.severity.value if hasattr(alert.severity, 'value') else str(alert.severity),
+            status=alert.status.value if hasattr(alert.status, 'value') else str(alert.status),
+            risk_score=float(alert.risk_score) if alert.risk_score else None,
+            triggered_rules=triggered_rules,
+            transaction_id=str(alert.transaction_id),
+            created_at=alert.created_at,
+        )
 
     async def get_alert(self, alert_id: str) -> Optional[FraudAlert]:
         """Get fraud alert by ID."""

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies.database import get_db_session
 from app.dependencies.auth import get_current_user
 from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionFilters, TransactionStatistics
+from app.schemas.fraud import FraudAnalysisRequest, FraudAnalysisResponse
 from app.services.transaction import TransactionService
 from app.models.identity.user import User
 from app.repositories.transaction import TransactionRepository
@@ -77,6 +78,30 @@ async def create_transaction(
     transaction_repo = TransactionRepository(session)
     service = TransactionService(transaction_repo)
     return await service.create_transaction(data, user_id=str(current_user.id))
+
+@router.post("/analyze", response_model=FraudAnalysisResponse)
+async def analyze_transaction(
+    data: FraudAnalysisRequest,
+    session: AsyncSession = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Create a transaction and immediately perform fraud analysis.
+
+    Workflow:
+    1. Creates transaction record
+    2. Extracts fraud features (amount, velocity, device, location, merchant)
+    3. Runs rule engine evaluation
+    4. Runs ML prediction (with fallback scoring)
+    5. Creates alert if risk_score >= 0.7
+    6. Creates case if risk_score >= 0.85
+
+    Returns:
+        FraudAnalysisResponse with transaction, prediction, rules, alert, case
+    """
+    transaction_repo = TransactionRepository(session)
+    service = TransactionService(transaction_repo)
+    return await service.create_transaction_with_fraud_check(data, current_user)
 
 @router.patch("/{id}")
 async def update_transaction(

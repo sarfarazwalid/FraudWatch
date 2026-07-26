@@ -102,6 +102,7 @@ def create_application() -> FastAPI:
     from app.api.v1.fraud_rules import router as fraud_rules_router
     from app.api.v1.model_registry import router as model_registry_router
     from app.api.v1.dashboard import router as dashboard_router
+    from app.api.v1.predictions import router as predictions_router
 
     api_prefix = settings.api_v1_prefix
 
@@ -118,6 +119,7 @@ def create_application() -> FastAPI:
     application.include_router(fraud_cases_router, prefix=f"{api_prefix}/fraud/cases", tags=["Fraud Cases"])
     application.include_router(fraud_rules_router, prefix=f"{api_prefix}/fraud/rules", tags=["Fraud Rules"])
     application.include_router(model_registry_router, prefix=f"{api_prefix}/ml/models", tags=["Model Registry"])
+    application.include_router(predictions_router, prefix=f"{api_prefix}/predictions", tags=["Predictions"])
 
     return application
 

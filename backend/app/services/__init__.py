@@ -19,6 +19,8 @@ from app.services.fraud_case import FraudCaseService
 from app.services.fraud_rule import FraudRuleService
 from app.services.investigation_timeline import InvestigationTimelineService
 from app.services.model_registry import ModelRegistryService
+from app.services.prediction import PredictionService
+from app.services.explainability import ExplainabilityService
 
 __all__ = [
     "AuthenticationService",
@@ -38,4 +40,6 @@ __all__ = [
     "FraudRuleService",
     "InvestigationTimelineService",
     "ModelRegistryService",
+    "PredictionService",
+    "ExplainabilityService",
 ]
