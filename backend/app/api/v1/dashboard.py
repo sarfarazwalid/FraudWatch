@@ -2,10 +2,10 @@
 Dashboard API routes.
 """
 
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, status
+from datetime import datetime, timezone, timedelta
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, case
+from sqlalchemy import select, func
 
 from app.dependencies.database import get_db_session
 from app.dependencies.auth import get_current_user
@@ -13,6 +13,7 @@ from app.models.identity.user import User
 from app.models.transaction.transaction import Transaction
 from app.models.fraud.fraud_alert import FraudAlert
 from app.models.fraud.fraud_case import FraudCase
+from app.models.fraud.enums import CaseStatus
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -52,10 +53,10 @@ async def get_dashboard_stats(
     )
     total_cases = total_cases_result.scalar() or 0
 
-    # Open cases
+    # Open cases (not CLOSED or RESOLVED)
     open_cases_result = await session.execute(
         select(func.count(FraudCase.id)).where(
-            FraudCase.status.notin_(["resolved", "closed"])
+            FraudCase.status.notin_([CaseStatus.CLOSED, CaseStatus.RESOLVED])
         )
     )
     open_cases = open_cases_result.scalar() or 0
@@ -63,36 +64,29 @@ async def get_dashboard_stats(
     # Resolved cases
     resolved_cases_result = await session.execute(
         select(func.count(FraudCase.id)).where(
-            FraudCase.status.in_(["resolved", "closed"])
+            FraudCase.status.in_([CaseStatus.RESOLVED, CaseStatus.CLOSED])
         )
     )
     resolved_cases = resolved_cases_result.scalar() or 0
 
-    # Average risk score (use risk_level_id as proxy if risk_score doesn't exist)
-    avg_risk_score = 0.0
-    try:
-        avg_risk_result = await session.execute(
-            select(func.avg(Transaction.risk_score))
-        )
-        avg_risk_score = float(avg_risk_result.scalar() or 0.0)
-    except Exception:
-        pass
+    # Average risk score from fraud alerts
+    avg_risk_result = await session.execute(
+        select(func.avg(FraudAlert.risk_score))
+    )
+    avg_risk_score = float(avg_risk_result.scalar() or 0.0)
 
-    # Fraud rate
+    # Fraud rate: alerts with risk_score >= 70 (0-100 scale) / total transactions
     fraud_rate = 0.0
-    try:
-        fraud_count_result = await session.execute(
-            select(func.count(Transaction.id)).where(
-                Transaction.risk_score >= 0.7
+    if total_transactions > 0:
+        high_risk_alerts_result = await session.execute(
+            select(func.count(FraudAlert.id)).where(
+                FraudAlert.risk_score >= 70
             )
         )
-        fraud_count = fraud_count_result.scalar() or 0
-        fraud_rate = (fraud_count / total_transactions * 100) if total_transactions > 0 else 0.0
-    except Exception:
-        pass
+        high_risk_count = high_risk_alerts_result.scalar() or 0
+        fraud_rate = (high_risk_count / total_transactions * 100)
 
     # Transactions per minute (last hour average)
-    from datetime import timedelta
     one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
     hour_tx_result = await session.execute(
         select(func.count(Transaction.id)).where(

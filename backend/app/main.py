@@ -21,8 +21,8 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 # Import all models FIRST to ensure they're registered with SQLAlchemy
-# before any database connections are etablished
-from app.models import (User,Role,Permission,RolePermission,UserSession,RefreshToken,)
+# before any database connections are established
+from app.models import User
 
 
 @asynccontextmanager
@@ -60,13 +60,12 @@ def create_application() -> FastAPI:
     # Global exception handlers
     @application.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
-        logger.error(f"Unhandled exception: {exc}", exc_info=True)
-        # Always return detailed error for debugging
+        logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}", exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 "detail": "Internal server error",
-                "error": str(exc),
+                "error": str(exc) if settings.environment == "development" else "An unexpected error occurred",
                 "type": type(exc).__name__,
             },
         )
@@ -103,6 +102,7 @@ def create_application() -> FastAPI:
     from app.api.v1.model_registry import router as model_registry_router
     from app.api.v1.dashboard import router as dashboard_router
     from app.api.v1.predictions import router as predictions_router
+    from app.api.v1.ml import router as ml_router
 
     api_prefix = settings.api_v1_prefix
 
@@ -120,6 +120,7 @@ def create_application() -> FastAPI:
     application.include_router(fraud_rules_router, prefix=f"{api_prefix}/fraud/rules", tags=["Fraud Rules"])
     application.include_router(model_registry_router, prefix=f"{api_prefix}/ml/models", tags=["Model Registry"])
     application.include_router(predictions_router, prefix=f"{api_prefix}/predictions", tags=["Predictions"])
+    application.include_router(ml_router, prefix=f"{api_prefix}/ml", tags=["ML Lifecycle"])
 
     return application
 

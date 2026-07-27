@@ -1,8 +1,12 @@
+import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Tuple, Dict, Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+logger = logging.getLogger(__name__)
 
 from app.models.transaction.transaction import Transaction
 from app.models.transaction.device import Device
@@ -28,7 +32,7 @@ class TransactionService:
     def __init__(self, transaction_repo: TransactionRepository):
         self.transaction_repo = transaction_repo
 
-    async def create_transaction(self, transaction_data: TransactionCreate) -> Transaction:
+    async def create_transaction(self, transaction_data: TransactionCreate, user_id: Optional[str] = None) -> Transaction:
         # Create transaction from schema
         transaction = Transaction(
             transaction_reference=transaction_data.transaction_reference,
@@ -69,9 +73,7 @@ class TransactionService:
                 correlation_id=str(transaction.id),
             )
         except Exception as e:
-            # Log error but don't fail transaction creation
-            # In production: structured logging
-            print(f"Failed to queue prediction task: {e}")
+            logger.warning(f"Failed to queue prediction task: {e}", exc_info=True)
 
         return transaction
 
@@ -107,8 +109,9 @@ class TransactionService:
         features = await self._extract_fraud_features(transaction, request)
 
         # 3. Run rule engine evaluation
-        rule_service = FraudRuleService.__new__(FraudRuleService)
-        rule_service.session = session
+        from app.repositories.fraud_rule import FraudRuleRepository
+        rule_repo = FraudRuleRepository(session)
+        rule_service = FraudRuleService(fraud_rule_repo=rule_repo)
         rule_evaluations = await rule_service.evaluate_transaction(transaction, features)
 
         # 4. Run ML prediction
@@ -118,8 +121,9 @@ class TransactionService:
         # 5. Create alert if risk_score >= 0.7
         alert = None
         if prediction.risk_score >= 0.7:
-            alert_service = FraudAlertService.__new__(FraudAlertService)
-            alert_service.session = session
+            from app.repositories.fraud_alert import FraudAlertRepository
+            alert_repo = FraudAlertRepository(session)
+            alert_service = FraudAlertService(fraud_alert_repo=alert_repo)
             alert = await alert_service.create_from_prediction(
                 transaction=transaction,
                 prediction=prediction,
@@ -130,8 +134,9 @@ class TransactionService:
         # 6. Create case if risk_score >= 0.85
         case = None
         if prediction.risk_score >= 0.85 and alert:
-            case_service = FraudCaseService.__new__(FraudCaseService)
-            case_service.session = session
+            from app.repositories.fraud_case import FraudCaseRepository
+            case_repo = FraudCaseRepository(session)
+            case_service = FraudCaseService(fraud_case_repo=case_repo)
             case = await case_service.create_from_alert(
                 alert=alert,
                 prediction=prediction,
@@ -171,25 +176,25 @@ class TransactionService:
 
         # Get or create reference transaction type
         tx_type_result = await self.transaction_repo.session.execute(
-            __import__("sqlalchemy").select(TransactionType).limit(1)
+            select(TransactionType).limit(1)
         )
         tx_type = tx_type_result.scalar_one_or_none()
 
         # Get or create reference currency
         currency_result = await self.transaction_repo.session.execute(
-            __import__("sqlalchemy").select(Currency).limit(1)
+            select(Currency).limit(1)
         )
         currency = currency_result.scalar_one_or_none()
 
         # Get or create reference payment method
         pm_result = await self.transaction_repo.session.execute(
-            __import__("sqlalchemy").select(PaymentMethod).limit(1)
+            select(PaymentMethod).limit(1)
         )
         payment_method = pm_result.scalar_one_or_none()
 
         # Get completed status
         status_result = await self.transaction_repo.session.execute(
-            __import__("sqlalchemy").select(TransactionStatusModel).where(
+            select(TransactionStatusModel).where(
                 TransactionStatusModel.code == TransactionStatusValue.COMPLETED.value
             ).limit(1)
         )
@@ -286,7 +291,7 @@ class TransactionService:
         device_score = 0.0
         if transaction.device_id:
             device_result = await self.transaction_repo.session.execute(
-                __import__("sqlalchemy").select(Device).where(
+                select(Device).where(
                     Device.id == transaction.device_id
                 ).limit(1)
             )
@@ -314,7 +319,7 @@ class TransactionService:
         country_risk_high = False
         if transaction.location_id:
             location_result = await self.transaction_repo.session.execute(
-                __import__("sqlalchemy").select(Location).where(
+                select(Location).where(
                     Location.id == transaction.location_id
                 ).limit(1)
             )
@@ -335,7 +340,7 @@ class TransactionService:
         merchant_score = 0.0
         if transaction.merchant_id:
             merchant_result = await self.transaction_repo.session.execute(
-                __import__("sqlalchemy").select(Merchant).where(
+                select(Merchant).where(
                     Merchant.id == transaction.merchant_id
                 ).limit(1)
             )
@@ -365,7 +370,8 @@ class TransactionService:
     async def update_transaction(
         self,
         transaction_id: str,
-        update_data: TransactionUpdate
+        update_data: TransactionUpdate,
+        user_id: Optional[str] = None,
     ) -> Optional[Transaction]:
 
         transaction = await self.transaction_repo.get(transaction_id)
@@ -387,7 +393,7 @@ class TransactionService:
 
         return transaction
 
-    async def delete_transaction(self, transaction_id: str) -> bool:
+    async def delete_transaction(self, transaction_id: str, user_id: Optional[str] = None) -> bool:
         transaction = await self.transaction_repo.get(transaction_id)
         if not transaction:
             return False
@@ -441,6 +447,10 @@ class TransactionService:
             sort_by=sort_by,
             sort_order=sort_order,
         )
+
+    async def get_statistics(self) -> Dict[str, Any]:
+        """Get transaction statistics."""
+        return await self.transaction_repo.get_statistics()
 
     async def list_transactions(
         self,

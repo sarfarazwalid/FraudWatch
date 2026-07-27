@@ -21,6 +21,8 @@ from app.services.investigation_timeline import InvestigationTimelineService
 from app.services.model_registry import ModelRegistryService
 from app.services.prediction import PredictionService
 from app.services.explainability import ExplainabilityService
+from app.services.analytics import AnalyticsService
+from app.services.monitoring import MonitoringService
 
 __all__ = [
     "AuthenticationService",
@@ -42,4 +44,6 @@ __all__ = [
     "ModelRegistryService",
     "PredictionService",
     "ExplainabilityService",
+    "AnalyticsService",
+    "MonitoringService",
 ]

@@ -108,10 +108,23 @@ class TransactionRepository(BaseRepository[Transaction, TransactionCreate, Trans
         total_result = await self.session.execute(select(func.count()).select_from(Transaction))
         total = total_result.scalar_one()
         amount_stats = await self.session.execute(
-            select(func.count(), func.sum(Transaction.amount), func.avg(Transaction.amount),
-                   func.median(Transaction.amount), func.max(Transaction.amount), func.min(Transaction.amount))
+            select(
+                func.count(Transaction.amount),
+                func.sum(Transaction.amount),
+                func.avg(Transaction.amount),
+                func.max(Transaction.amount),
+                func.min(Transaction.amount),
+            )
         )
-        return {"total_transactions": total}
+        row = amount_stats.one()
+        _count, sum_amount, avg_amount, max_amount, min_amount = row
+        return {
+            "total_transactions": total,
+            "total_amount": float(sum_amount) if sum_amount else 0.0,
+            "average_amount": float(avg_amount) if avg_amount else 0.0,
+            "max_amount": float(max_amount) if max_amount else 0.0,
+            "min_amount": float(min_amount) if min_amount else 0.0,
+        }
 
     async def get_trends(self, days: int = 30) -> List[Dict[str, Any]]:
         return []

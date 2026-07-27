@@ -72,24 +72,43 @@ class AlertResponse(BaseModel):
     id: str
     alert_number: str
     title: str
+    description: Optional[str] = None
     severity: str
     status: str
     risk_score: Optional[float] = None
     triggered_rules: List[str] = Field(default_factory=list)
     transaction_id: str
+    merchant_id: Optional[str] = None
+    rule_id: Optional[str] = None
+    case_id: Optional[str] = None
+    assigned_to: Optional[str] = None
+    created_by: Optional[str] = None
+    resolved_by: Optional[str] = None
+    resolved_at: Optional[datetime] = None
+    metadata: Optional[Dict[str, Any]] = None
     created_at: datetime
+    updated_at: datetime
 
 
 class CaseResponse(BaseModel):
     """Fraud case response."""
     id: str
     case_number: str
-    severity: str
+    title: Optional[str] = None
+    description: Optional[str] = None
     status: str
-    alert_id: Optional[str] = None
-    transaction_ids: List[str] = Field(default_factory=list)
+    severity: str
     risk_score: Optional[float] = None
+    assigned_to: Optional[str] = None
+    created_by: Optional[str] = None
+    alert_id: Optional[str] = None
+    transaction_id: Optional[str] = None
+    merchant_id: Optional[str] = None
+    resolved_by: Optional[str] = None
+    resolved_at: Optional[datetime] = None
+    metadata: Optional[Dict[str, Any]] = None
     created_at: datetime
+    updated_at: datetime
 
 
 class FraudAnalysisResponse(BaseModel):

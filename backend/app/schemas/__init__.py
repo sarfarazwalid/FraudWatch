@@ -1,9 +1,3 @@
-"""
-Pydantic schemas for FraudWatch API.
-
-Organized by domain for request/response validation.
-"""
-
 from app.schemas.auth import (
     LoginRequest,
     RegisterRequest,
@@ -38,6 +32,20 @@ from app.schemas.fraud import (
     AlertResponse,
     CaseResponse,
 )
+from app.schemas.transaction import (
+    TransactionBase,
+    TransactionCreate,
+    TransactionUpdate,
+    TransactionResponse,
+    TransactionFilters,
+    TransactionStatistics,
+)
+from app.schemas.merchant import (
+    MerchantResponse,
+    MerchantCreate,
+    MerchantUpdate,
+    MerchantListResponse,
+)
 
 __all__ = [
     # Auth schemas
@@ -71,4 +79,16 @@ __all__ = [
     "ExplanationResponse",
     "AlertResponse",
     "CaseResponse",
+    # Transaction schemas
+    "TransactionBase",
+    "TransactionCreate",
+    "TransactionUpdate",
+    "TransactionResponse",
+    "TransactionFilters",
+    "TransactionStatistics",
+    # Merchant schemas
+    "MerchantResponse",
+    "MerchantCreate",
+    "MerchantUpdate",
+    "MerchantListResponse",
 ]

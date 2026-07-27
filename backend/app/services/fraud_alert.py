@@ -9,7 +9,7 @@ from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, and_
+from sqlalchemy import select, or_, and_, func
 
 from app.models.fraud.fraud_alert import FraudAlert
 from app.models.fraud.enums import AlertStatus, AlertSeverity, DetectionMethod
@@ -39,10 +39,12 @@ class FraudAlertService:
         Returns:
             Created alert
         """
+        if not self.session:
+            raise RuntimeError("FraudAlertService has no session available")
         alert = FraudAlert(**alert_data)
-        self.fraud_alert_repo.session.add(alert)
-        await self.fraud_alert_repo.session.flush()
-        await self.fraud_alert_repo.session.refresh(alert)
+        self.session.add(alert)
+        await self.session.flush()
+        await self.session.refresh(alert)
         return alert
 
     async def create_from_prediction(
@@ -115,10 +117,13 @@ class FraudAlertService:
             triggered_rules=triggered_rules,
             transaction_id=str(alert.transaction_id),
             created_at=alert.created_at,
+            updated_at=alert.updated_at,
         )
 
     async def get_alert(self, alert_id: str) -> Optional[FraudAlert]:
         """Get fraud alert by ID."""
+        if not self.fraud_alert_repo:
+            raise RuntimeError("FraudAlertService has no repository available")
         return await self.fraud_alert_repo.get(alert_id)
 
     async def list_alerts(
@@ -144,9 +149,12 @@ class FraudAlertService:
         Returns:
             Tuple of (items, total_count)
         """
+        if not self.session:
+            raise RuntimeError("FraudAlertService has no session available")
+
         # Build base query
         query = select(FraudAlert)
-        count_query = select(FraudAlert.id)
+        count_query = select(func.count()).select_from(FraudAlert)
 
         # Apply search filter
         conditions = []
@@ -174,8 +182,8 @@ class FraudAlertService:
             count_query = count_query.where(and_(*conditions))
 
         # Get total count
-        total_result = await self.fraud_alert_repo.session.execute(count_query)
-        total = len(total_result.scalars().all())
+        total_result = await self.session.execute(count_query)
+        total = total_result.scalar_one()
 
         # Apply sorting
         sort_field = getattr(FraudAlert, sort_by, FraudAlert.created_at)
@@ -188,23 +196,25 @@ class FraudAlertService:
         query = query.offset((page - 1) * page_size).limit(page_size)
 
         # Execute query
-        result = await self.fraud_alert_repo.session.execute(query)
+        result = await self.session.execute(query)
         items = list(result.scalars().all())
 
         return items, total
 
     async def acknowledge_alert(self, alert_id: str, analyst_id: str) -> Optional[FraudAlert]:
         """Acknowledge a fraud alert."""
+        if not self.fraud_alert_repo or not self.session:
+            raise RuntimeError("FraudAlertService has no repository or session available")
         alert = await self.fraud_alert_repo.get(alert_id)
         if not alert:
             return None
 
         alert.status = AlertStatus.ACKNOWLEDGED
         alert.assigned_analyst_id = analyst_id
-        alert.acknowledged_at = datetime.now()
+        alert.acknowledged_at = datetime.now(timezone.utc)
 
-        await self.fraud_alert_repo.session.flush()
-        await self.fraud_alert_repo.session.refresh(alert)
+        await self.session.flush()
+        await self.session.refresh(alert)
         return alert
 
     async def resolve_alert(
@@ -214,6 +224,8 @@ class FraudAlertService:
         false_positive: bool = False
     ) -> Optional[FraudAlert]:
         """Resolve a fraud alert."""
+        if not self.fraud_alert_repo or not self.session:
+            raise RuntimeError("FraudAlertService has no repository or session available")
         alert = await self.fraud_alert_repo.get(alert_id)
         if not alert:
             return None
@@ -221,10 +233,10 @@ class FraudAlertService:
         alert.status = AlertStatus.RESOLVED
         alert.resolution_summary = resolution
         alert.false_positive = false_positive
-        alert.resolved_at = datetime.now()
+        alert.resolved_at = datetime.now(timezone.utc)
 
-        await self.fraud_alert_repo.session.flush()
-        await self.fraud_alert_repo.session.refresh(alert)
+        await self.session.flush()
+        await self.session.refresh(alert)
         return alert
 
     async def escalate_to_case(self, alert_id: str, case_data: dict) -> Optional[dict]:
@@ -238,13 +250,15 @@ class FraudAlertService:
         Returns:
             Created case data or None
         """
+        if not self.fraud_alert_repo or not self.session:
+            raise RuntimeError("FraudAlertService has no repository or session available")
         alert = await self.fraud_alert_repo.get(alert_id)
         if not alert:
             return None
 
         # Update alert status
         alert.status = AlertStatus.ESCALATED
-        await self.fraud_alert_repo.session.flush()
+        await self.session.flush()
 
         # Return case data for case service to create
         return {

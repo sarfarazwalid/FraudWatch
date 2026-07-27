@@ -7,10 +7,11 @@ Designed to be replaced with XGBoost/Isolation Forest later.
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List, Tuple
 from uuid import UUID
 
+import numpy as np
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 
@@ -28,8 +29,8 @@ class PredictionService:
     """
     Service for fraud prediction using ML models with fallback scoring.
 
-    Currently uses a weighted scoring model as fallback.
-    Ready for XGBoost/Isolation Forest integration.
+    Attempts to use deployed ML model first, falls back to weighted scoring
+    if no model is available. Integrates with ModelLoader for hot-swapping.
     """
 
     # Model version for fallback scoring
@@ -44,9 +45,10 @@ class PredictionService:
         "merchant": 0.15,
     }
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, model_loader: Optional[Any] = None):
         self.session = session
         self.repo = BaseRepository(Prediction, session)
+        self.model_loader = model_loader
 
     async def predict_transaction_risk(
         self,
@@ -74,17 +76,67 @@ class PredictionService:
         Returns:
             PredictionResponse with risk score, prediction, confidence
         """
-        # Calculate risk score using weighted fallback model
-        risk_score = self._calculate_weighted_score(features)
+        model_version = self.FALLBACK_MODEL_VERSION
+        risk_score = None
+        confidence = None
+        feature_importance = None
+
+        # Try ML model first
+        if self.model_loader:
+            try:
+                model = self.model_loader.get_model()
+                if model and model.is_trained:
+                    # Build feature vector in correct order
+                    feature_vector = self._build_feature_vector(features)
+
+                    # Predict probability
+                    proba = model.predict_proba(feature_vector)
+                    if proba is not None and len(proba) > 0:
+                        risk_score = float(proba[0, 1]) if proba.ndim > 1 else float(proba[0])
+                    else:
+                        risk_score = self._calculate_weighted_score(features)
+
+                    # Get model info
+                    model_info = self.model_loader.get_model_info()
+                    if model_info:
+                        model_version = f"{model_info.get('algorithm', 'unknown')}_v{model_info.get('version', '1')}"
+
+                    # Get feature importance from model
+                    fi_dict = model.get_feature_importance()
+                    if fi_dict:
+                        feature_importance = self._map_feature_importance(fi_dict)
+                    else:
+                        feature_importance = self._calculate_feature_importance(features)
+
+                    confidence = self._calculate_confidence(risk_score)
+
+                    logger.info(
+                        "ML model prediction successful",
+                        extra={
+                            "event": "prediction.ml",
+                            "transaction_id": str(transaction.id),
+                            "risk_score": risk_score,
+                            "model_version": model_version,
+                        },
+                    )
+                else:
+                    # No model loaded, use fallback
+                    risk_score = self._calculate_weighted_score(features)
+                    confidence = self._calculate_confidence(risk_score)
+                    feature_importance = self._calculate_feature_importance(features)
+            except Exception as e:
+                logger.warning(f"ML model prediction failed, using fallback: {e}")
+                risk_score = self._calculate_weighted_score(features)
+                confidence = self._calculate_confidence(risk_score)
+                feature_importance = self._calculate_feature_importance(features)
+        else:
+            # No model loader, use fallback
+            risk_score = self._calculate_weighted_score(features)
+            confidence = self._calculate_confidence(risk_score)
+            feature_importance = self._calculate_feature_importance(features)
 
         # Determine prediction label
         prediction = "fraud" if risk_score >= 0.5 else "legitimate"
-
-        # Calculate confidence based on distance from threshold
-        confidence = self._calculate_confidence(risk_score)
-
-        # Calculate feature importance
-        feature_importance = self._calculate_feature_importance(features)
 
         # Store prediction in database
         await self._store_prediction(
@@ -94,14 +146,50 @@ class PredictionService:
             confidence=confidence,
             feature_importance=feature_importance,
             features=features,
+            model_version=model_version,
         )
 
         return PredictionResponse(
             risk_score=round(risk_score, 4),
             prediction=prediction,
             confidence=round(confidence, 4),
-            model_version=self.FALLBACK_MODEL_VERSION,
+            model_version=model_version,
             feature_importance=feature_importance,
+        )
+
+    def _build_feature_vector(self, features: Dict[str, Any]) -> np.ndarray:
+        """
+        Build feature vector from features dictionary.
+
+        Args:
+            features: Feature dictionary
+
+        Returns:
+            Numpy array of feature values in correct order
+        """
+        # Order matters - must match training order
+        feature_order = [
+            "amount_score", "velocity_score", "device_score",
+            "location_score", "merchant_score"
+        ]
+        return np.array([[features.get(f, 0.0) for f in feature_order]])
+
+    def _map_feature_importance(self, fi_dict: Dict[str, float]) -> FeatureImportance:
+        """
+        Map model feature importance to schema.
+
+        Args:
+            fi_dict: Feature importance dictionary from model
+
+        Returns:
+            FeatureImportance object
+        """
+        return FeatureImportance(
+            amount=fi_dict.get("amount_score", fi_dict.get("amount", 0.0)),
+            velocity=fi_dict.get("velocity_score", fi_dict.get("velocity", 0.0)),
+            device=fi_dict.get("device_score", fi_dict.get("device", 0.0)),
+            location=fi_dict.get("location_score", fi_dict.get("location", 0.0)),
+            merchant=fi_dict.get("merchant_score", fi_dict.get("merchant", 0.0)),
         )
 
     def _calculate_weighted_score(self, features: Dict[str, Any]) -> float:
@@ -169,11 +257,12 @@ class PredictionService:
         confidence: float,
         feature_importance: FeatureImportance,
         features: Dict[str, Any],
+        model_version: str = None,
     ) -> Prediction:
         """Store prediction record in database."""
         prediction = Prediction(
             transaction_id=transaction_id,
-            model_version_id=self.FALLBACK_MODEL_VERSION,
+            model_version_id=model_version or self.FALLBACK_MODEL_VERSION,
             predicted_label=PredictionLabel(prediction_label),
             confidence_score=confidence,
             probability_score=risk_score,
@@ -236,7 +325,7 @@ class PredictionService:
         Returns:
             Tuple of (transaction_count, frequency_score)
         """
-        since = datetime.now(timezone.utc) - __import__("datetime").timedelta(minutes=minutes)
+        since = datetime.now(timezone.utc) - timedelta(minutes=minutes)
 
         result = await self.session.execute(
             select(func.count(Transaction.id)).where(

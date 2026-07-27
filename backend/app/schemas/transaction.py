@@ -66,14 +66,15 @@ class TransactionInDB(TransactionBase):
 
 class TransactionResponse(TransactionBase):
     id: str
+    transaction_id: str
     created_at: datetime
     updated_at: datetime
     version: int = 1
     merchant_name: Optional[str] = None
-    payment_method_name: Optional[str] = None
-    transaction_type_name: Optional[str] = None
-    status_name: Optional[str] = None
-    risk_level_name: Optional[str] = None
+    payment_method: Optional[str] = None
+    transaction_type: Optional[str] = None
+    status: str
+    risk_level: Optional[str] = None
 
 class TransactionFilters(BaseModel):
     search: Optional[str] = None

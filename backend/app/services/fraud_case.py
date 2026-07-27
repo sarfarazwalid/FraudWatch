@@ -9,7 +9,7 @@ from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, and_
+from sqlalchemy import select, or_, and_, func
 
 from app.models.fraud.fraud_case import FraudCase
 from app.models.fraud.fraud_alert import FraudAlert
@@ -130,9 +130,10 @@ class FraudCaseService:
             severity=case.severity,
             status=case.status.value if hasattr(case.status, 'value') else str(case.status),
             alert_id=str(case.alert_id) if case.alert_id else None,
-            transaction_ids=[alert.transaction_id],
+            transaction_id=str(alert.transaction_id) if alert.transaction_id else None,
             risk_score=risk_score,
             created_at=case.created_at,
+            updated_at=case.updated_at,
         )
 
     async def get_case(self, case_id: str) -> Optional[FraudCase]:
@@ -162,17 +163,19 @@ class FraudCaseService:
         Returns:
             Tuple of (items, total_count)
         """
+        if not self.session:
+            raise RuntimeError("FraudCaseService has no session available")
+
         # Build base query
         query = select(FraudCase)
-        count_query = select(FraudCase.id)
+        count_query = select(func.count()).select_from(FraudCase)
 
         # Apply search filter
         conditions = []
         if search:
             conditions.append(or_(
                 FraudCase.case_number.ilike(f"%{search}%"),
-                FraudCase.title.ilike(f"%{search}%"),
-                FraudCase.description.ilike(f"%{search}%"),
+                FraudCase.summary.ilike(f"%{search}%"),
             ))
 
         # Apply filters
@@ -192,8 +195,8 @@ class FraudCaseService:
             count_query = count_query.where(and_(*conditions))
 
         # Get total count
-        total_result = await self.fraud_case_repo.session.execute(count_query)
-        total = len(total_result.scalars().all())
+        total_result = await self.session.execute(count_query)
+        total = total_result.scalar_one()
 
         # Apply sorting
         sort_field = getattr(FraudCase, sort_by, FraudCase.created_at)
@@ -206,7 +209,7 @@ class FraudCaseService:
         query = query.offset((page - 1) * page_size).limit(page_size)
 
         # Execute query
-        result = await self.fraud_case_repo.session.execute(query)
+        result = await self.session.execute(query)
         items = list(result.scalars().all())
 
         return items, total
@@ -217,16 +220,18 @@ class FraudCaseService:
         investigator_id: str
     ) -> Optional[FraudCase]:
         """Assign investigator to case."""
+        if not self.fraud_case_repo or not self.session:
+            raise RuntimeError("FraudCaseService has no repository or session available")
         case = await self.fraud_case_repo.get(case_id)
         if not case:
             return None
 
         case.investigator_id = investigator_id
         case.status = CaseStatus.UNDER_INVESTIGATION
-        case.opened_at = datetime.now()
+        case.opened_at = datetime.now(timezone.utc)
 
-        await self.fraud_case_repo.session.flush()
-        await self.fraud_case_repo.session.refresh(case)
+        await self.session.flush()
+        await self.session.refresh(case)
         return case
 
     async def update_case_status(
@@ -235,18 +240,19 @@ class FraudCaseService:
         status: CaseStatus
     ) -> Optional[FraudCase]:
         """Update case status."""
+        if not self.fraud_case_repo or not self.session:
+            raise RuntimeError("FraudCaseService has no repository or session available")
         case = await self.fraud_case_repo.get(case_id)
         if not case:
             return None
 
         case.status = status
 
-
         if status in [CaseStatus.RESOLVED, CaseStatus.CLOSED]:
-            case.closed_at = datetime.now()
+            case.closed_at = datetime.now(timezone.utc)
 
-        await self.fraud_case_repo.session.flush()
-        await self.fraud_case_repo.session.refresh(case)
+        await self.session.flush()
+        await self.session.refresh(case)
         return case
 
     async def close_case(
@@ -257,6 +263,8 @@ class FraudCaseService:
         summary: str
     ) -> Optional[FraudCase]:
         """Close fraud case with resolution."""
+        if not self.fraud_case_repo or not self.session:
+            raise RuntimeError("FraudCaseService has no repository or session available")
         case = await self.fraud_case_repo.get(case_id)
         if not case:
             return None
@@ -265,8 +273,8 @@ class FraudCaseService:
         case.fraud_confirmed = fraud_confirmed
         case.resolution = resolution
         case.summary = summary
-        case.closed_at = datetime.now()
+        case.closed_at = datetime.now(timezone.utc)
 
-        await self.fraud_case_repo.session.flush()
-        await self.fraud_case_repo.session.refresh(case)
+        await self.session.flush()
+        await self.session.refresh(case)
         return case
