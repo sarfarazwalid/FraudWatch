@@ -18,18 +18,20 @@ class ModelRegistryResponse(BaseModel):
     accuracy: Optional[float] = None; precision: Optional[float] = None
     recall: Optional[float] = None; f1_score: Optional[float] = None
     is_active: bool; created_by: Optional[str] = None; created_at: datetime; updated_at: datetime
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 class ModelRegistryCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     version: str = "1.0.0"; description: Optional[str] = None
     model_type: str = "fraud_detection"; framework: Optional[str] = None
+    model_config = ConfigDict(protected_namespaces=())
 
 class ModelRegistryUpdate(BaseModel):
     description: Optional[str] = None; status: Optional[str] = None
     accuracy: Optional[float] = None; precision: Optional[float] = None
     recall: Optional[float] = None; f1_score: Optional[float] = None
     is_active: Optional[bool] = None
+    model_config = ConfigDict(protected_namespaces=())
 
 @router.get("/", response_model=dict)
 async def list_models(

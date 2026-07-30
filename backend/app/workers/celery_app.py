@@ -21,8 +21,8 @@ from app.config.settings import settings
 logger = structlog.get_logger(__name__)
 
 # Celery configuration
-CELERY_BROKER_URL = settings.redis_url
-CELERY_RESULT_BACKEND = settings.redis_url.replace("/0", "/1")
+CELERY_BROKER_URL = settings.celery_broker_url
+CELERY_RESULT_BACKEND = settings.celery_result_backend
 
 # Task settings
 CELERY_TASK_ACKS_LATE = True
@@ -164,6 +164,7 @@ def create_celery_app() -> Celery:
         task_retry_jitter=CELERY_TASK_RETRY_JITTER,
         worker_send_task_events=True,
         worker_heartbeat_interval=30,  # 30 seconds
+        broker_connection_retry_on_startup=True,
     )
 
     logger.info("celery_app_configured", broker=CELERY_BROKER_URL)

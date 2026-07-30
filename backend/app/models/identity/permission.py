@@ -9,10 +9,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String
+from sqlalchemy import Enum, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+from app.models.enums import PermissionAction
 from app.models.mixins import (
     UUIDMixin,
     TimestampMixin,
@@ -40,8 +41,11 @@ class Permission(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, AuditMixin, V
         nullable=False,
     )
 
-    action: Mapped[str] = mapped_column(
-        String(50),
+    action: Mapped[PermissionAction] = mapped_column(
+        # values_callable makes SQLAlchemy use the enum *values* (lowercase)
+        # instead of the enum *names* (uppercase), matching the PostgreSQL
+        # permission_action enum labels (create, read, update, delete, execute).
+        Enum(PermissionAction, name="permission_action", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
 

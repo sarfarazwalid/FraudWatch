@@ -35,7 +35,6 @@ ml/artifacts/
 ml/datasets/
 ml/notebooks/
 backend/docs/
-backend/seed/
 backend/tests/
 backend/scripts/
 docs/
